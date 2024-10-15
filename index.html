@@ -1,92 +1,77 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Qalamiquest</title>
+    <title>QalamiQuest</title>
     <link rel="stylesheet" href="styles.css">
 
 </head>
-
 <body>
-    <nav>
-        <div class="wrapper">
-            <div class="logo"><a href="#">QalamiQuest</a></div>
-            <input type="radio" name="slider" id="menu-btn">
-            <input type="radio" name="slider" id="close-btn">
-            <ul class="nav-links">
-                <label for="close-btn" class="btn close-btn"><i class="fas fa-times"></i></label>
-                <li><a href="#">Log In</a></li>
-                <li><a href="#">Sign Up</a></li>
-            </ul>
-            <label for="menu-btn" class="btn menu-btn"><i class="fas fa-bars"></i></label>
-        </div>
-    </nav>
 
-    <div class="big-container">
-        <div class="small-container">
-            <section class="hero">
-                <h1>Empower your research journey.</h1>
-                <p>Qalamiquest empowers novice researchers to conduct impactful qualitative studies that integrate Islamic values.</p>
-                <a href="#" class="cta-button">Get Started</a>
-            </section>
-        </div>
-
-        <div class="divider">
-            <img src="divider.png" alt="Divider" />
-        </div>
-
-        <!-- Mission -->
-        <div class="small-container">
-            <div class="section">
-                <div class="text">
-                    <h1>Our Mission</h1>
-                    <p>Offer a user-friendly platform that assists novice researchers in integrating relevant Quran and Hadith verses into their qualitative research. We aim to bridge academic research with Islamic values, enabling seamless exploration and incorporation of authentic Islamic sources. Our goal is to develop a tool that streamlines linking research papers with sacred texts, ensuring alignment with religious teachings and ethical principles under supervisor guidance.</p>
-                </div>
-                <div class="image">
-                    <img src="kitab.jpg" alt="Mission Image">
-                </div>
-            </div>
-        </div>
-
-        <!-- Vision -->
-        <div class="small-container">
-            <div class="section">
-                <div class="image">
-                    <img src="vision.jpg" alt="Vision Image">
-                </div>
-                <div class="text">
-                    <h1>Our Vision</h1>
-                    <p>Transform academic research by providing an innovative platform that integrates Islamic values with scholarly work. We aim to be the leading resource for researchers incorporating authentic Quranic and Hadith sources into their qualitative research, enhancing integrity, relevance, and ethical grounding. Through innovation and collaboration, we envision empowering researchers worldwide to produce insightful, ethically sound, and culturally enriched research.</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Lead Developers -->
-        <section class="developers">
-            <h2>Project Lead Developers</h2>
-            <div class="developer">
-                <img src="ajim.jpg" alt="Developer 1">
-                <p>Hazim Imran bin Abd Aziz</p>
-            </div>
-            <div class="developer">
-                <img src="harraz.jpg" alt="Developer 2">
-                <p>Harraz Nazrullah bin Suhairul Afzan</p>
-            </div>
-        </section>
+<!-- Navbar Section -->
+<div class="navbar">
+    <div class="navbar-left">QalamiQuest</div>
+    <div class="navbar-right">
+        <button onclick="location.href='#login'">Login</button>
+        <button onclick="location.href='#signup'">Signup</button>
     </div>
+</div>
 
-    <!-- Footer -->
-    <footer>
-        <div class="footer-content">
-            <div class="social-links">
-                <a href="https://www.iium.edu.my/"><img src="iium.png" alt="iium"></a>
-            </div>
-            <p>&copy; 2024 QalamiQuest. All rights reserved.</p>
+<!-- Main Content Section -->
+<div class="content">
+    <h1>Empower your <br> research journey</h1>
+    <p>QalamiQuest empowers novice researchers to conduct <br> impactful qualitative studies that integrate Islamic values.</p>
+    <button onclick="location.href='#register'">Register</button>
+</div>
+
+<!-- Divider Image -->
+<img src="images/divider.png" alt="Divider Image" class="divider">
+
+<!-- Mission Section -->
+<div class="mission">
+    <div class="text">
+        <h2>Mission</h2>
+        <p>Offer a user-friendly platform that assists novice researchers in integrating relevant Quran and Hadith verses into their qualitative research. We aim to bridge academic research with Islamic values, enabling seamless exploration and incorporation of authentic Islamic sources. Our goal is to develop a tool that streamlines linking research papers with sacred texts, ensuring alignment with religious teachings and ethical principles under supervisor guidance.</p>
+    </div>
+    <div class="image">
+        <img src="images/kitab.jpg" alt="Mission Image">
+    </div>
+</div>
+
+<!-- Vision Section -->
+<div class="vision">
+    <div class="image">
+        <img src="images/vision.jpg" alt="Vision Image">
+    </div>
+    <div class="text">
+        <h2>Vision</h2>
+        <p>Transform academic research by providing an innovative platform that integrates Islamic values with scholarly work. We aim to be the leading resource for researchers incorporating authentic Quranic and Hadith sources into their qualitative research, enhancing integrity, relevance, and ethical grounding. Through innovation and collaboration, we envision empowering researchers worldwide to produce insightful, ethically sound, and culturally enriched research.</p>
+    </div>
+</div>
+
+<!-- Project Lead Section -->
+<div class="project-lead">
+    <h2>Project Lead Developers</h2>
+    <div class="developer-container">
+        <div class="developer">
+            <img src="images/ajim.jpg" alt="Developer 1 Photo">
+            <h3>Hazim Imran Bin Abd Aziz</h3>
         </div>
-    </footer>
+        <div class="developer">
+            <img src="images/harraz.jpg" alt="Developer 2 Photo">
+            <h3>Harraz Nasrullah Bin Suhairul Afzan</h3>
+        </div>
+    </div>
+</div>
+
+<!-- Footer Section -->
+<div class="footer">
+    <a href="https://www.iium.edu.my/" target="_blank">
+        <img src="images/iium.png" alt="IIUM Logo">
+    </a>
+    <p>&copy; 2024 QalamiQuest. All rights reserved.</p>
+</div>
 
 </body>
-
 </html>
