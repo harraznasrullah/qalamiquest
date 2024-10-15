@@ -1,259 +1,462 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap');
 
-        /* Global styles for body */
-        body {
-            font-family: 'Montserrat', sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            background: linear-gradient(to bottom, #ffffff, #EDFFFF); /* Background gradient */
-        }
+/* Global styles for body */
+body {
+    font-family: 'Montserrat', sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background: linear-gradient(to bottom, #ffffff, #EDFFFF);
+    /* Background gradient */
+}
 
-        /* Navbar styling */
-        .navbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: #00b8a9; /* Green navbar background */
-            padding: 10px 20px;
-            height: 60px;
-            position: sticky;
-            top: 0; /* Stick navbar to top */
-            z-index: 1000; /* Ensures navbar stays above other content */
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Adds shadow to navbar */
-        }
+/* Navbar styling */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #00b8a9;
+    /* Green navbar background */
+    padding: 10px 20px;
+    height: 60px;
+    position: sticky;
+    top: 0;
+    /* Stick navbar to top */
+    z-index: 1000;
+    /* Ensures navbar stays above other content */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    /* Adds shadow to navbar */
+}
 
-        /* Navbar left section styling (logo/title) */
-        .navbar-left {
-            color: white;
-            font-size: 28px;
-            font-weight: 600;
-            letter-spacing: 1px;
-        }
+/* Navbar left section styling (logo/title) */
+.navbar-left {
+    color: white;
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
 
-        /* Navbar right section (buttons) */
-        .navbar-right {
-            display: flex;
-        }
+/* Navbar right section (buttons) */
+.navbar-right {
+    display: flex;
+}
 
-        /* Styling for buttons in navbar */
-        .navbar-right button {
-            background-color:#00b8a9; /* Button color matching navbar */
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            margin-left: 15px;
-            cursor: pointer;
-            font-size: 16px;
-            border-radius: 25px; /* Rounded button edges */
-            transition: background 0.3s ease, transform 0.3s ease; /* Transition on hover */
-        }
+/* Styling for buttons in navbar */
+.navbar-right button {
+    background-color: #00b8a9;
+    /* Button color matching navbar */
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    margin-left: 15px;
+    cursor: pointer;
+    font-size: 16px;
+    border-radius: 25px;
+    /* Rounded button edges */
+    transition: background 0.3s ease, transform 0.3s ease;
+    /* Transition on hover */
+}
 
-        /* Hover effect for navbar buttons */
-        .navbar-right button:hover {
-            background: #004d4d; /* Darker shade of green on hover */
-            transform: scale(1.05); /* Slight enlargement on hover */
-        }
+/* Hover effect for navbar buttons */
+.navbar-right button:hover {
+    background: #004d4d;
+    /* Darker shade of green on hover */
+    transform: scale(1.05);
+    /* Slight enlargement on hover */
+}
 
-        /* Main content styling */
-        .content {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            flex-grow: 1;
-            padding: 50px 20px;
-        }
+/*-------------------------------------------------------------------------------------------------------------------------------------------*/
 
-        /* Main heading (h1) styling */
-        .content h1 {
-            font-size: 72px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            color: #333;
-            line-height: 1.2;
-        }
+/* Main content styling */
+.content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    flex-grow: 1;
+    padding: 50px 20px;
+}
 
-        /* Paragraph under the main heading */
-        .content p {
-            font-size: 20px;
-            margin-bottom: 30px;
-            line-height: 1.6;
-            color: #666;
-            max-width: 800px; /* Limits paragraph width */
-        }
+/* Main heading (h1) styling */
+.content h1 {
+    font-size: 72px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: #333;
+    line-height: 1.2;
+}
 
-        /* Button in the content section */
-        .content button {
-            background: white;
-            color: black;
-            border: 2px solid black; /* Black border for button */
-            padding: 15px 40px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            border-radius: 30px;
-            transition: background-color 0.3s ease, transform 0.3s ease, color 0.3s ease; /* Smooth transitions */
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Button shadow for emphasis */
-        }
+/* Paragraph under the main heading */
+.content p {
+    font-size: 20px;
+    margin-bottom: 30px;
+    line-height: 1.6;
+    color: #666;
+    max-width: 800px;
+    /* Limits paragraph width */
+}
 
-        /* Hover effect for main content button */
-        .content button:hover {
-            background: #004d4d; /* Button turns dark green on hover */
-            color: white;
-            transform: scale(1.05); /* Button enlarges slightly */
-        }
+/* Button in the content section */
+.content button {
+    background: white;
+    color: black;
+    border: 2px solid black;
+    /* Black border for button */
+    padding: 15px 40px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 30px;
+    transition: background-color 0.3s ease, transform 0.3s ease, color 0.3s ease;
+    /* Smooth transitions */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    /* Button shadow for emphasis */
+}
 
-        /* Divider styling (for visual separation) */
-        .divider {
-            width: 100%;
-            max-width: 600px;
-            margin: 20px auto;
-            display: block;
-            border: none;
-        }
+/* Hover effect for main content button */
+.content button:hover {
+    background: #004d4d;
+    /* Button turns dark green on hover */
+    color: white;
+    transform: scale(1.05);
+    /* Button enlarges slightly */
+}
 
-        /* Mission and vision section containers */
-        .mission, .vision {
-            display: flex;
-            align-items: center;
-            padding: 40px;
-            margin: 40px auto;
-            max-width: 1000px;
-            border: 1px solid #ddd; /* Light border */
-            border-radius: 12px; /* Rounded corners */
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1); /* Light shadow */
-            background-color: #fff;
-            transition: transform 0.3s ease; /* Smooth hover effect */
-        }
+/* Divider styling (for visual separation) */
+.divider {
+    width: 100%;
+    max-width: 600px;
+    margin: 20px auto;
+    display: block;
+    border: none;
+}
 
-        /* Hover effect for mission and vision sections */
-        .mission:hover, .vision:hover {
-            transform: translateY(-5px); /* Slight upward movement on hover */
-        }
+/* Mission and vision section containers */
+.mission,
+.vision {
+    display: flex;
+    align-items: center;
+    padding: 40px;
+    margin: 40px auto;
+    max-width: 1000px;
+    border: 1px solid #ddd;
+    /* Light border */
+    border-radius: 12px;
+    /* Rounded corners */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    /* Light shadow */
+    background-color: #fff;
+    transition: transform 0.3s ease;
+    /* Smooth hover effect */
+}
 
-        /* Mission section layout: reverse row direction */
-        .mission {
-            flex-direction: row-reverse;
-        }
+/* Hover effect for mission and vision sections */
+.mission:hover,
+.vision:hover {
+    transform: translateY(-5px);
+    /* Slight upward movement on hover */
+}
 
-        /* Vision section layout: regular row direction */
-        .vision {
-            flex-direction: row;
-        }
+/* Mission section layout: reverse row direction */
+.mission {
+    flex-direction: row-reverse;
+}
 
-        /* Text content styling for mission and vision */
-        .text {
-            flex: 1;
-            padding: 20px;
-        }
+/* Vision section layout: regular row direction */
+.vision {
+    flex-direction: row;
+}
 
-        /* Image container styling */
-        .image {
-            flex: 1;
-            text-align: center;
-        }
+/* Text content styling for mission and vision */
+.text {
+    flex: 1;
+    padding: 20px;
+}
 
-        /* Styling for images inside mission and vision sections */
-        .image img {
-            width: 90%;
-            border-radius: 12px; /* Rounded corners for images */
-        }
+/* Image container styling */
+.image {
+    flex: 1;
+    text-align: center;
+}
 
-        /* Styling for section headings (h2) */
-        h2 {
-            font-size: 36px;
-            color: #333;
-        }
+/* Styling for images inside mission and vision sections */
+.image img {
+    width: 90%;
+    border-radius: 12px;
+    /* Rounded corners for images */
+}
 
-        /* Paragraph styling */
-        p {
-            font-size: 18px;
-            color: #666;
-            line-height: 1.6;
-            text-align: justify; /* Justified text alignment */
-        }
+/* Styling for section headings (h2) */
+h2 {
+    font-size: 36px;
+    color: #333;
+}
 
-        /* Project lead section styling */
-        .project-lead {
-            text-align: center;
-            padding: 40px 20px;
-            background-color: #f8f8f8; /* Light gray background */
-            border-top: 1px solid #ddd; /* Top border */
-        }
+/* Paragraph styling */
+p {
+    font-size: 18px;
+    color: #666;
+    line-height: 1.6;
+    text-align: justify;
+    /* Justified text alignment */
+}
 
-        /* Heading inside project lead section */
-        .project-lead h2 {
-            font-size: 32px;
-            margin-bottom: 30px;
-            color: #333;
-        }
+/* Project lead section styling */
+.project-lead {
+    text-align: center;
+    padding: 40px 20px;
+    background-color: #f8f8f8;
+    /* Light gray background */
+    border-top: 1px solid #ddd;
+    /* Top border */
+}
 
-        /* Developer container for project lead section */
-        .developer-container {
-            display: flex;
-            justify-content: center;
-            gap: 40px;
-            margin-bottom: 40px;
-        }
+/* Heading inside project lead section */
+.project-lead h2 {
+    font-size: 32px;
+    margin-bottom: 30px;
+    color: #333;
+}
 
-        /* Individual developer card styling */
-        .developer {
-            text-align: center;
-            max-width: 250px;
-        }
+/* Developer container for project lead section */
+.developer-container {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-bottom: 40px;
+}
 
-        /* Developer image styling */
-        .developer img {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%; /* Round images */
-            object-fit: cover;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Shadow effect */
-            transition: transform 0.3s ease;
-        }
+/* Individual developer card styling */
+.developer {
+    text-align: center;
+    max-width: 250px;
+}
 
-        /* Hover effect for developer images */
-        .developer img:hover {
-            transform: scale(1.1); /* Slight enlargement on hover */
-        }
+/* Developer image styling */
+.developer img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    /* Round images */
+    object-fit: cover;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    /* Shadow effect */
+    transition: transform 0.3s ease;
+}
 
-        /* Developer name styling */
-        .developer h3 {
-            font-size: 20px;
-            margin-top: 15px;
-            color: #333;
-        }
+/* Hover effect for developer images */
+.developer img:hover {
+    transform: scale(1.1);
+    /* Slight enlargement on hover */
+}
 
-        /* Footer section styling */
-        .footer {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background-color: #004d4d; /* Dark green background */
-            color: white;
-            padding: 30px 0;
-            width: 100%;
-        }
+/* Developer name styling */
+.developer h3 {
+    font-size: 20px;
+    margin-top: 15px;
+    color: #333;
+}
 
-        /* Footer logo image styling */
-        .footer img {
-            width: 100px;
-            cursor: pointer;
-            transition: transform 0.3s ease;
-        }
+/* Footer section styling */
+.footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #004d4d;
+    /* Dark green background */
+    color: white;
+    padding: 30px 0;
+    width: 100%;
+}
 
-        /* Footer image hover effect */
-        .footer img:hover {
-            transform: scale(1.1); /* Slight enlargement on hover */
-        }
+/* Footer logo image styling */
+.footer img {
+    width: 100px;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
 
-        /* Footer paragraph styling */
-        .footer p {
-            margin: 10px 0 0;
-            text-align: center;
-        }
+/* Footer image hover effect */
+.footer img:hover {
+    transform: scale(1.1);
+    /* Slight enlargement on hover */
+}
+
+/* Footer paragraph styling */
+.footer p {
+    margin: 10px 0 0;
+    text-align: center;
+}
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------*/
+
+/* Registration page styles */
+.register-content {
+    display: flex;
+    /* Use flexbox to align items */
+    justify-content: center;
+    /* Center items horizontally */
+    align-items: center;
+    /* Center items vertically */
+    width: 100%;
+    /* Full width */
+    height: calc(100vh - 79px);
+    /* Full height minus navbar height */
+    box-sizing: border-box;
+    /* Ensure padding doesn't cause overflow */
+}
+
+/* Styles for the registration form */
+.register-form {
+    background-color: #d0f1f0;
+    /* Light background color */
+    border-radius: 10px;
+    /* Rounded corners */
+    padding: 20px;
+    /* Inner spacing */
+    width: 100%;
+    /* Full width */
+    max-width: 350px;
+    /* Maximum width for larger screens */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    /* Subtle shadow for depth */
+    text-align: center;
+    /* Center text within the form */
+}
+
+/* Center text for headings and paragraphs in the form */
+.register-form h2,
+.register-form p {
+    text-align: center;
+    /* Ensure text is centered */
+    margin: 0;
+    /* Reset margin to avoid unexpected spacing */
+}
+
+/* Styles for the main heading (h2) in the registration form */
+.register-form h2 {
+    margin-bottom: 15px;
+    /* Space below the heading */
+    font-size: 22px;
+    /* Font size for heading */
+    color: #333;
+    /* Dark text color */
+}
+
+/* Styles for paragraphs in the registration form */
+.register-form p {
+    margin-bottom: 10px;
+    /* Space below the paragraph */
+    color: #666;
+    /* Grey text color for contrast */
+}
+
+/* Form layout styles */
+.register-form form {
+    display: flex;
+    /* Use flexbox for form layout */
+    flex-direction: column;
+    /* Arrange items vertically */
+    align-items: center;
+    /* Center items horizontally */
+}
+
+/* Input field styles for text, email, and password types */
+.register-form input[type="text"],
+.register-form input[type="email"],
+.register-form input[type="password"] {
+    width: 100%;
+    /* Full width */
+    max-width: 300px;
+    /* Maximum width */
+    padding: 10px;
+    /* Inner spacing */
+    margin-bottom: 10px;
+    /* Space below input fields */
+    border-radius: 5px;
+    /* Rounded corners */
+    border: 1px solid #ccc;
+    /* Light grey border */
+    font-size: 14px;
+    /* Font size for input text */
+}
+
+/* Styles for focused input fields */
+.register-form input[type="text"]:focus,
+.register-form input[type="email"]:focus,
+.register-form input[type="password"]:focus {
+    outline: none;
+    /* Remove default outline */
+    border-color: #00b8a9;
+    /* Change border color on focus */
+    box-shadow: 0 0 5px rgba(0, 184, 169, 0.5);
+    /* Add shadow effect */
+}
+
+/* Styles for labels above input fields */
+.register-form label {
+    display: block;
+    /* Block layout for labels */
+    width: 100%;
+    /* Full width */
+    max-width: 300px;
+    /* Maximum width */
+    text-align: left;
+    /* Align text to the left */
+    margin-bottom: 5px;
+    /* Space below labels */
+    font-weight: 600;
+    /* Bold text */
+}
+
+/* Styles for the radio button group */
+.radio-group {
+    display: flex;
+    /* Use flexbox for layout */
+    justify-content: space-around;
+    /* Space items evenly */
+    margin-bottom: 15px;
+    /* Space below the group */
+    width: 100%;
+    /* Full width */
+    max-width: 300px;
+    /* Maximum width */
+}
+
+/* Styles for the submit button */
+.register-form button {
+    width: 100%;
+    /* Full width */
+    max-width: 300px;
+    /* Maximum width */
+    padding: 10px;
+    /* Inner spacing */
+    background-color: #ffb74d;
+    /* Light orange background */
+    color: #333;
+    /* Dark text color */
+    border: none;
+    /* Remove border */
+    border-radius: 20px;
+    /* Rounded corners */
+    font-size: 14px;
+    /* Font size for button text */
+    font-weight: bold;
+    /* Bold text */
+    cursor: pointer;
+    /* Change cursor to pointer on hover */
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    /* Smooth transition effects */
+}
+
+/* Hover effect for the submit button */
+.register-form button:hover {
+    background-color: #ffa726;
+    /* Darker orange background on hover */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    /* Shadow effect on hover */
+}
