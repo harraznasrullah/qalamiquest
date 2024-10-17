@@ -289,7 +289,7 @@ p {
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------*/
 
-/* Registration page styles */
+/* Signup and Login page styles */
 .register-content,
 .login-content {
     display: flex;
@@ -364,6 +364,7 @@ p {
     align-items: center;
     /* Center items horizontally */
 }
+
 /* Input field styles for text, email, and password types */
 .register-form input[type="text"],
 .register-form input[type="email"],
@@ -416,18 +417,40 @@ p {
     /* Bold text */
 }
 
+
 /* Styles for the radio button group */
 .radio-group {
     display: flex;
     /* Use flexbox for layout */
     justify-content: space-around;
     /* Space items evenly */
-    margin-bottom: 15px;
-    /* Space below the group */
     width: 100%;
     /* Full width */
     max-width: 300px;
     /* Maximum width */
+    flex-direction: column;
+    /* Stack the radio buttons vertically */
+
+
+}
+
+/* Style for the radio button labels */
+.radio-group label {
+    font-weight: 500;
+    /* Adjust to 'normal', 'bold', or any numeric value (e.g., 400, 700) */
+    font-size: 15px;
+    /* Optional: Adjust font size as needed */
+}
+
+
+.radio-group div {
+    display: flex;
+    align-items: center;
+}
+
+.radio-group input[type="radio"] {
+    margin-right: 8px;
+    /* Space between the radio button and label */
 }
 
 /* Styles for the submit button */
@@ -455,6 +478,7 @@ p {
     /* Change cursor to pointer on hover */
     transition: background-color 0.3s ease, box-shadow 0.3s ease;
     /* Smooth transition effects */
+    margin-top: 10px;
 }
 
 /* Hover effect for the submit button */
