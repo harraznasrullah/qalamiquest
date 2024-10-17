@@ -160,11 +160,6 @@ body {
     /* Slight upward movement on hover */
 }
 
-/* Mission section layout: reverse row direction */
-.mission {
-    flex-direction: row-reverse;
-}
-
 /* Vision section layout: regular row direction */
 .vision {
     flex-direction: row;
@@ -295,7 +290,8 @@ p {
 /*-------------------------------------------------------------------------------------------------------------------------------------------*/
 
 /* Registration page styles */
-.register-content {
+.register-content,
+.login-content {
     display: flex;
     /* Use flexbox to align items */
     justify-content: center;
@@ -311,7 +307,8 @@ p {
 }
 
 /* Styles for the registration form */
-.register-form {
+.register-form,
+.login-form {
     background-color: #d0f1f0;
     /* Light background color */
     border-radius: 10px;
@@ -338,7 +335,8 @@ p {
 }
 
 /* Styles for the main heading (h2) in the registration form */
-.register-form h2 {
+.register-form h2,
+.login-form h2 {
     margin-bottom: 15px;
     /* Space below the heading */
     font-size: 22px;
@@ -348,7 +346,8 @@ p {
 }
 
 /* Styles for paragraphs in the registration form */
-.register-form p {
+.register-form p,
+.login-form p {
     margin-bottom: 10px;
     /* Space below the paragraph */
     color: #666;
@@ -356,7 +355,8 @@ p {
 }
 
 /* Form layout styles */
-.register-form form {
+.register-form form,
+.login-form p {
     display: flex;
     /* Use flexbox for form layout */
     flex-direction: column;
@@ -364,11 +364,12 @@ p {
     align-items: center;
     /* Center items horizontally */
 }
-
 /* Input field styles for text, email, and password types */
 .register-form input[type="text"],
 .register-form input[type="email"],
-.register-form input[type="password"] {
+.register-form input[type="password"],
+.login-form input[type="email"],
+.login-form input[type="password"] {
     width: 100%;
     /* Full width */
     max-width: 300px;
@@ -388,7 +389,9 @@ p {
 /* Styles for focused input fields */
 .register-form input[type="text"]:focus,
 .register-form input[type="email"]:focus,
-.register-form input[type="password"]:focus {
+.register-form input[type="password"]:focus,
+.login-form input[type="email"]:focus,
+.login-form input[type="password"]:focus {
     outline: none;
     /* Remove default outline */
     border-color: #00b8a9;
@@ -428,7 +431,8 @@ p {
 }
 
 /* Styles for the submit button */
-.register-form button {
+.register-form button,
+.login-form button {
     width: 100%;
     /* Full width */
     max-width: 300px;
@@ -454,9 +458,24 @@ p {
 }
 
 /* Hover effect for the submit button */
-.register-form button:hover {
+.register-form button:hover,
+.login-form button:hover {
     background-color: #ffa726;
     /* Darker orange background on hover */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     /* Shadow effect on hover */
+}
+
+.create-account-link {
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+.create-account-link a {
+    color: #666;
+    text-decoration: none;
+}
+
+.create-account-link a:hover {
+    text-decoration: underline;
 }
