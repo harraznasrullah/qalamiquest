@@ -20,6 +20,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit();
     }
 
+    // Check if the email or matric number already exists
+    $stmt = $conn->prepare("SELECT COUNT(*) FROM users WHERE email = ? OR matric = ?");
+    $stmt->bind_param("ss", $email, $matric);
+    $stmt->execute();
+    $stmt->bind_result($count);
+    $stmt->fetch();
+    $stmt->close();
+
+    if ($count > 0) {
+        $_SESSION['error'] = "Email or Matric Number already exists. Please use a different one.";
+        $_SESSION['form_data'] = $_POST; // Store form data to preserve it after reload
+        header("Location: signup.php");
+        exit();
+    }
+
     // Hash the password for security
     $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
@@ -53,44 +68,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QalamiQuest - Register</title>
     <link rel="stylesheet" href="styles.css">
-    <style>
-        /* Modal styles */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-        }
-
-        .modal-content {
-            background-color: white;
-            margin: 15% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
-            max-width: 400px;
-            text-align: center;
-            border-radius: 5px;
-        }
-
-        .close {
-            color: red;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .close:hover, .close:focus {
-            color: darkred;
-            text-decoration: none;
-            cursor: pointer;
-        }
-    </style>
 </head>
 
 <body>
@@ -101,6 +78,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <div class="navbar-right">
             <button onclick="location.href='index.php'">Home</button>
             <button onclick="location.href='login.php'">Login</button>
+        </div>
+    </div>
+
+     <!-- Modal for error message -->
+     <div id="errorModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <p id="errorMessage"></p>
         </div>
     </div>
 
@@ -127,10 +112,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     required>
 
                 <label for="password">* Password</label>
-                <input type="password" id="password" name="password" required>
+                <input type="password" id="password" name="password" 
+                    value="<?php echo isset($_SESSION['form_data']['password']) ? htmlspecialchars($_SESSION['form_data']['password']) : ''; ?>" required>
 
                 <label for="confirm_password">* Confirm Password</label>
-                <input type="password" id="confirm_password" name="confirm_password" required>
+                <input type="password" id="confirm_password" name="confirm_password" 
+                    value="<?php echo isset($_SESSION['form_data']['confirm_password']) ? htmlspecialchars($_SESSION['form_data']['confirm_password']) : ''; ?>" required>
 
                 <label for="title">* Title</label>
                 <div class="radio-group">
@@ -150,14 +137,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                 <button type="submit">Sign Up</button>
             </form>
-        </div>
-    </div>
-
-    <!-- Modal for error message -->
-    <div id="errorModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal()">&times;</span>
-            <p id="errorMessage"></p>
         </div>
     </div>
 
