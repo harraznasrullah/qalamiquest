@@ -1,3 +1,48 @@
+<?php
+session_start(); // Start the session
+
+// Include database connection file
+include 'db_connection.php';
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $fullname = $_POST['fullname'];
+    $email = $_POST['email'];
+    $matric = $_POST['matric'];
+    $password = $_POST['password'];
+    $confirm_password = $_POST['confirm_password'];
+    $title = $_POST['title'];
+
+    // Validate passwords match
+    if ($password !== $confirm_password) {
+        $_SESSION['error'] = "Passwords do not match.";
+        header("Location: signup.php");
+        exit();
+    }
+
+    // Hash the password for security
+    $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+
+    // Prepare an SQL statement to prevent SQL injection
+    $stmt = $conn->prepare("INSERT INTO users (fullname, email, matric, password, title) VALUES (?, ?, ?, ?, ?)");
+    $stmt->bind_param("sssss", $fullname, $email, $matric, $hashed_password, $title);
+
+    // Execute the statement
+    if ($stmt->execute()) {
+        $_SESSION['success'] = "Registration successful!";
+        header("Location: dashboard.php"); // Change this to your dashboard page
+        exit();
+    } else {
+        $_SESSION['error'] = "Registration failed. Please try again.";
+        header("Location: signup.php");
+        exit();
+    }
+
+    // Close the statement and connection
+    $stmt->close();
+    $conn->close();
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -9,12 +54,13 @@
 </head>
 
 <body>
+
     <!-- Navbar -->
     <div class="navbar">
         <div class="navbar-left">QalamiQuest</div>
         <div class="navbar-right">
-            <button onclick="location.href='index.html'">Home</button>
-            <button onclick="location.href='login.html'">Login</button>
+            <button onclick="location.href='index.php'">Home</button>
+            <button onclick="location.href='login.php'">Login</button>
         </div>
     </div>
 
@@ -26,7 +72,6 @@
 
             <!-- Display error message -->
             <?php
-            session_start();
             if (isset($_SESSION['error'])) {
                 echo "<p style='color: red;'>" . $_SESSION['error'] . "</p>";
                 unset($_SESSION['error']); // Clear the error message after displaying it
@@ -65,6 +110,7 @@
             </form>
         </div>
     </div>
+
 </body>
 
 </html>
