@@ -67,6 +67,19 @@ body {
     /* Slight enlargement on hover */
 }
 
+.navbar-right i {
+    font-size: 24px;
+    margin-left: 20px;
+    cursor: pointer;
+    color: white;
+}
+
+.navbar-right span {
+    margin-left: 10px;
+    font-size: 18px;
+    color: white;
+}
+
 /*-------------------------------------------------------------------------------------------------------------------------------------------*/
 
 /* Main content styling */
@@ -505,8 +518,8 @@ p {
     text-decoration: underline;
 }
 
- /* Modal styles */
- .modal {
+/* Modal styles */
+.modal {
     display: none;
     position: fixed;
     z-index: 1;
@@ -541,4 +554,146 @@ p {
     color: darkred;
     text-decoration: none;
     cursor: pointer;
+}
+
+/*--------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*Dashboard page*/
+.sidebar {
+    height: calc(100% - 50px);
+    /* Adjust height for the navbar (assuming navbar height is 50px) */
+    width: 240px;
+    position: fixed;
+    top: 50px;
+    /* Start just below the navbar */
+    left: -300px;
+    /* Hidden by default */
+    background-color: #f9f9f9;
+    /* Slight transparency */
+    border: 1px solid #ddd;
+    /* Add a border color and thickness */
+    overflow-x: hidden;
+    transition: 0.3s;
+    padding-top: 40px;
+    /* Top padding */
+    z-index: 1;
+    /* Ensure it is above the main content */
+}
+
+.sidebar a {
+    padding: 15px;
+    text-decoration: none;
+    font-size: 16px;
+    color: #818181;
+    display: block;
+    transition: 0.3s;
+}
+
+.sidebar a i {
+    margin-right: 10px;
+    /* Adjust the value as needed for right padding */
+    vertical-align: middle;
+    /* Align the icon vertically with text */
+    width: 30px;
+    text-align: center;
+
+}
+
+.sidebar a:hover {
+    color: black;
+}
+
+/* Open button in the navbar */
+.open-btn {
+    font-size: 24px;
+    cursor: pointer;
+    background-color: transparent;
+    border: none;
+    color: white;
+    padding: 10px;
+}
+
+.open-btn:hover {
+    background-color: #444;
+}
+
+/* Main content when sidebar is open */
+#main-content {
+    transition: margin-left 0.3s;
+    padding: 16px;
+    margin-left: 0;
+    /* Default margin */
+}
+
+.service-grid {
+    display: flex;
+    justify-content: space-evenly;
+    padding: 50px;
+    flex-wrap: wrap;
+}
+
+.service-box {
+    background-color: white;
+    border: 2px solid #20B2AA;
+    padding: 20px;
+    width: 280px;
+    text-align: center;
+    margin: 10px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.service-box:hover {
+    transform: translateY(-10px);
+}
+
+.service-box i {
+    font-size: 40px;
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.service-box h3 {
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+.service-box p {
+    font-size: 14px;
+    color: #555;
+    text-align: center;
+}
+
+.recent-section {
+    padding: 30px;
+}
+
+.recent-section h3 {
+    margin-bottom: 10px;
+}
+
+.recent-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.recent-table th,
+.recent-table td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.recent-table th {
+    background-color: #f9f9f9;
+    color: #333;
+}
+
+.recent-table td {
+    color: #666;
+}
+
+.bell-icon {
+    margin-right: 10px;
+    /* Adjust the value as needed */
 }

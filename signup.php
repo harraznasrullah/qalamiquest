@@ -38,14 +38,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Hash the password for security
     $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-    // Prepare an SQL statement to prevent SQL injection
+    // Prepare an SQL statement to insert the user into the database
     $stmt = $conn->prepare("INSERT INTO users (fullname, email, matric, password, title) VALUES (?, ?, ?, ?, ?)");
     $stmt->bind_param("sssss", $fullname, $email, $matric, $hashed_password, $title);
 
     // Execute the statement
     if ($stmt->execute()) {
+        // Store the user's name in the session for later use
+        $_SESSION['user_name'] = $fullname; // Store full name in session
+        $_SESSION['user_email'] = $email; // Optionally store the user's email
+
+        // Redirect to dashboard
         $_SESSION['success'] = "Registration successful!";
-        header("Location: dashboard.php"); // Change this to your dashboard page
+        header("Location: dashboard.php"); // Redirect to dashboard after successful registration
         exit();
     } else {
         $_SESSION['error'] = "Registration failed. Please try again.";
@@ -59,7 +64,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $conn->close();
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 
