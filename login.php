@@ -15,8 +15,8 @@
     <div class="navbar">
         <div class="navbar-left">QalamiQuest</div>
         <div class="navbar-right">
-            <button onclick="location.href='index.html'">Home</button>
-            <button onclick="location.href='signup.html'">Signup</button>
+            <button onclick="location.href='index.php'">Home</button>
+            <button onclick="location.href='signup.php'">Signup</button>
         </div>
     </div>
 
@@ -31,7 +31,7 @@
                 <button type="submit">Login</button>
             </form>
             <div class="create-account-link">
-                <a href="signup.html">Create a new account</a>
+                <a href="signup.php">Create a new account</a>
             </div>
         </div>
     </div>

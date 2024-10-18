@@ -15,6 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Validate passwords match
     if ($password !== $confirm_password) {
         $_SESSION['error'] = "Passwords do not match.";
+        $_SESSION['form_data'] = $_POST; // Store form data to preserve it after reload
         header("Location: signup.php");
         exit();
     }
@@ -33,6 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit();
     } else {
         $_SESSION['error'] = "Registration failed. Please try again.";
+        $_SESSION['form_data'] = $_POST; // Store form data to preserve it after reload
         header("Location: signup.php");
         exit();
     }
@@ -70,23 +72,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <h2>Create your account</h2>
             <p>Registration is easy.</p>
 
-            <!-- Display error message -->
-            <?php
-            if (isset($_SESSION['error'])) {
-                echo "<p style='color: red;'>" . $_SESSION['error'] . "</p>";
-                unset($_SESSION['error']); // Clear the error message after displaying it
-            }
-            ?>
-
             <form action="signup.php" method="POST">
                 <label for="fullname">* Full Name</label>
-                <input type="text" id="fullname" name="fullname" required>
+                <input type="text" id="fullname" name="fullname" 
+                    value="<?php echo isset($_SESSION['form_data']['fullname']) ? htmlspecialchars($_SESSION['form_data']['fullname']) : ''; ?>" 
+                    required>
 
                 <label for="email">* Email</label>
-                <input type="email" id="email" name="email" required>
+                <input type="email" id="email" name="email" 
+                    value="<?php echo isset($_SESSION['form_data']['email']) ? htmlspecialchars($_SESSION['form_data']['email']) : ''; ?>" 
+                    required>
 
                 <label for="matric">* Matric No.</label>
-                <input type="text" id="matric" name="matric" required>
+                <input type="text" id="matric" name="matric" 
+                    value="<?php echo isset($_SESSION['form_data']['matric']) ? htmlspecialchars($_SESSION['form_data']['matric']) : ''; ?>" 
+                    required>
 
                 <label for="password">* Password</label>
                 <input type="password" id="password" name="password" required>
@@ -97,11 +97,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <label for="title">* Title</label>
                 <div class="radio-group">
                     <div>
-                        <input type="radio" id="student" name="title" value="student" required>
+                        <input type="radio" id="student" name="title" value="student" 
+                            <?php echo (isset($_SESSION['form_data']['title']) && $_SESSION['form_data']['title'] === 'student') ? 'checked' : ''; ?> 
+                            required>
                         <label for="student">Student</label>
                     </div>
                     <div>
-                        <input type="radio" id="lecturer" name="title" value="lecturer" required>
+                        <input type="radio" id="lecturer" name="title" value="lecturer" 
+                            <?php echo (isset($_SESSION['form_data']['title']) && $_SESSION['form_data']['title'] === 'lecturer') ? 'checked' : ''; ?> 
+                            required>
                         <label for="lecturer">Lecturer</label>
                     </div>
                 </div>
@@ -111,6 +115,45 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </div>
     </div>
 
+    <!-- Modal for error message -->
+    <div id="errorModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <p id="errorMessage"></p>
+        </div>
+    </div>
+
+    <script>
+        // Show the modal if there's an error
+        window.onload = function () {
+            <?php if (isset($_SESSION['error'])) { ?>
+                var errorMessage = "<?php echo $_SESSION['error']; ?>";
+                showModal(errorMessage);
+            <?php unset($_SESSION['error']); } // Clear the error session data ?>
+        }
+
+        function showModal(message) {
+            document.getElementById("errorMessage").innerText = message;
+            document.getElementById("errorModal").style.display = "block";
+        }
+
+        function closeModal() {
+            document.getElementById("errorModal").style.display = "none";
+        }
+
+        // Close the modal when the user clicks outside of the modal content
+        window.onclick = function(event) {
+            var modal = document.getElementById("errorModal");
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+    </script>
+
 </body>
 
 </html>
+<?php
+// Clear the form data after rendering the page
+unset($_SESSION['form_data']);
+?>
