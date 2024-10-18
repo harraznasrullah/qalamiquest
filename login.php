@@ -62,8 +62,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <button onclick="location.href='signup.php'">Signup</button>
         </div>
     </div>
-<!-- Modal for error message -->
-<div id="errorModal" class="modal">
+    <!-- Modal for error message -->
+    <div id="errorModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeModal()">&times;</span>
             <p id="errorMessage"></p>
@@ -76,7 +76,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <p>Log in is easy.</p>
 
             <form action="login.php" method="POST">
-                <input type="email" id="email" name="email" placeholder="Email" required value="<?php echo htmlspecialchars($email); ?>">
+                <input type="email" id="email" name="email" placeholder="Email" required
+                    value="<?php echo htmlspecialchars($email); ?>">
                 <input type="password" id="password" name="password" placeholder="Password" required>
                 <button type="submit">Login</button>
             </form>
@@ -92,7 +93,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <?php if (isset($_SESSION['error'])) { ?>
                 var errorMessage = "<?php echo $_SESSION['error']; ?>";
                 showModal(errorMessage);
-            <?php unset($_SESSION['error']); } // Clear the error session data ?>
+                <?php unset($_SESSION['error']);
+            } // Clear the error session data ?>
         }
 
         function showModal(message) {
@@ -105,7 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
 
         // Close the modal when the user clicks outside of the modal content
-        window.onclick = function(event) {
+        window.onclick = function (event) {
             var modal = document.getElementById("errorModal");
             if (event.target == modal) {
                 modal.style.display = "none";

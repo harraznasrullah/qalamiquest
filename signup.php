@@ -81,8 +81,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </div>
     </div>
 
-     <!-- Modal for error message -->
-     <div id="errorModal" class="modal">
+    <!-- Modal for error message -->
+    <div id="errorModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeModal()">&times;</span>
             <p id="errorMessage"></p>
@@ -112,12 +112,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     required>
 
                 <label for="password">* Password</label>
-                <input type="password" id="password" name="password" 
-                    value="<?php echo isset($_SESSION['form_data']['password']) ? htmlspecialchars($_SESSION['form_data']['password']) : ''; ?>" required>
+                <input type="password" id="password" name="password" required>
 
                 <label for="confirm_password">* Confirm Password</label>
-                <input type="password" id="confirm_password" name="confirm_password" 
-                    value="<?php echo isset($_SESSION['form_data']['confirm_password']) ? htmlspecialchars($_SESSION['form_data']['confirm_password']) : ''; ?>" required>
+                <input type="password" id="confirm_password" name="confirm_password" required>
 
                 <label for="title">* Title</label>
                 <div class="radio-group">
