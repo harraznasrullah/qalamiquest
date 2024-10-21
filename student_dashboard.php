@@ -2,7 +2,7 @@
 session_start(); // If user authentication is required, session management is necessary
 
 // Example: Displaying the user's name if logged in
-$user_name = strtoupper($_SESSION['fullname']); // Retrieve from session after login
+$user_name = strtoupper($_SESSION['user_name']); // Retrieve from session after login
 ?>
 
 <!DOCTYPE html>
@@ -37,7 +37,7 @@ $user_name = strtoupper($_SESSION['fullname']); // Retrieve from session after l
         <a href="#"><i class="fas fa-users"></i> Lecturer/Supervisor</a>
         <a href="#"><i class="fas fa-bookmark"></i> Bookmark</a>
         <a href="#"><i class="fas fa-user"></i> Edit Profile</a>
-        <a href="index.php"><i class="fas fa-sign-out-alt"></i> Logout</a> <!-- Logout link -->
+        <a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a> <!-- Updated Logout link -->
 
     </div>
 

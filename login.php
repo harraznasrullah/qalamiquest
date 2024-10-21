@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if (password_verify($password, $hashed_password)) {
             // Set session variables
             $_SESSION['user_id'] = $id;
-            $_SESSION['fullname'] = $fullname;
+            $_SESSION['user_name'] = $fullname;
 
             // Redirect to the dashboard or homepage
             header("Location: student_dashboard.php");

@@ -81,7 +81,7 @@
         <a href="https://www.iium.edu.my/" target="_blank">
             <img src="images/iium.png" alt="IIUM Logo">
         </a>
-        <p>&copy; 2024 QalamiQuest. All rights reserved.</p>
+        <p style = "color: white;">&copy; 2024 QalamiQuest. All rights reserved.</p>
     </div>
 
 </body>
