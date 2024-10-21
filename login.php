@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $_SESSION['fullname'] = $fullname;
 
             // Redirect to the dashboard or homepage
-            header("Location: dashboard.php");
+            header("Location: student_dashboard.php");
             exit();
         } else {
             // Password is incorrect

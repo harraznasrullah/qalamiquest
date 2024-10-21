@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         // Redirect to dashboard
         $_SESSION['success'] = "Registration successful!";
-        header("Location: dashboard.php"); // Redirect to dashboard after successful registration
+        header("Location: student_dashboard.php"); // Redirect to dashboard after successful registration
         exit();
     } else {
         $_SESSION['error'] = "Registration failed. Please try again.";
