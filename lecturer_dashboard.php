@@ -2,7 +2,7 @@
 session_start(); // Ensure session is started to retrieve user data
 
 // Example: Displaying the lecturer's name if logged in
-$lecturer_name = strtoupper($_SESSION['fullname']); // Retrieve from session after login
+$lecturer_name = strtoupper($_SESSION['user_name']); // Retrieve from session after login
 ?>
 
 <!DOCTYPE html>

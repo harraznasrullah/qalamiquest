@@ -91,14 +91,14 @@ body {
     text-align: center;
     flex-grow: 1;
     padding: 50px 20px;
-    margin: 100px auto;
+    margin-top: 60px;
 }
 
 /* Main heading (h1) styling */
 .content h1 {
     font-size: 72px;
     font-weight: 600;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     color: #333;
     line-height: 1.2;
     font-family: math;

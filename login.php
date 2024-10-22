@@ -9,14 +9,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $email = $_POST['email'];
     $password = $_POST['password'];
 
-    // Check if the user exists in the database
-    $stmt = $conn->prepare("SELECT id, fullname, password FROM users WHERE email = ?");
+    // Check if the user exists in the database and retrieve the title
+    $stmt = $conn->prepare("SELECT id, fullname, password, title FROM users WHERE email = ?");
     $stmt->bind_param("s", $email);
     $stmt->execute();
     $stmt->store_result();
     
     if ($stmt->num_rows > 0) {
-        $stmt->bind_result($id, $fullname, $hashed_password);
+        $stmt->bind_result($id, $fullname, $hashed_password, $title);
         $stmt->fetch();
 
         // Verify the password
@@ -24,9 +24,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // Set session variables
             $_SESSION['user_id'] = $id;
             $_SESSION['user_name'] = $fullname;
+            $_SESSION['title'] = $title; // Store the title (student or lecturer)
 
-            // Redirect to the dashboard or homepage
-            header("Location: student_dashboard.php");
+            // Redirect based on the user's title
+            if ($title === 'student') {
+                header("Location: student_dashboard.php");
+            } elseif ($title === 'lecturer') {
+                header("Location: lecturer_dashboard.php");
+            }
             exit();
         } else {
             // Password is incorrect
@@ -118,6 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 </body>
 </html>
+
 <?php
 // Clear the session error after rendering the page
 unset($_SESSION['error']);

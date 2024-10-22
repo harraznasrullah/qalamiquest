@@ -44,13 +44,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     // Execute the statement
     if ($stmt->execute()) {
-        // Store the user's name in the session for later use
+        // Store the user's name and title in the session
         $_SESSION['user_name'] = $fullname; // Store full name in session
         $_SESSION['user_email'] = $email; // Optionally store the user's email
+        $_SESSION['title'] = $title; // Store user title (student/lecturer)
 
-        // Redirect to dashboard
+        // Redirect based on the user's title
         $_SESSION['success'] = "Registration successful!";
-        header("Location: student_dashboard.php"); // Redirect to dashboard after successful registration
+        if ($title === 'student') {
+            header("Location: student_dashboard.php");
+        } elseif ($title === 'lecturer') {
+            header("Location: lecturer_dashboard.php");
+        }
         exit();
     } else {
         $_SESSION['error'] = "Registration failed. Please try again.";
