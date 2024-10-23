@@ -44,7 +44,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     // Execute the statement
     if ($stmt->execute()) {
-        // Store the user's name and title in the session
+        // Store the newly registered user's ID in the session
+        $_SESSION['user_id'] = $conn->insert_id; // Store the newly created user ID
         $_SESSION['user_name'] = $fullname; // Store full name in session
         $_SESSION['user_email'] = $email; // Optionally store the user's email
         $_SESSION['title'] = $title; // Store user title (student/lecturer)
@@ -69,6 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $conn->close();
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 
