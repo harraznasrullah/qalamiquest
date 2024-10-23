@@ -245,6 +245,7 @@ $lecturer_name = strtoupper($_SESSION['user_name']); // Retrieve from session af
     <div class="sidebar" id="sidebar">
         <a href="lecturer_dashboard.php"><i class="fas fa-home"></i> Dashboard</a>
         <a href="approval.php"><i class="fas fa-check-circle"></i> Approval</a>
+        <a href="edit_profile.php"><i class="fas fa-user"></i> Edit Profile</a>
         <a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 

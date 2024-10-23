@@ -36,7 +36,7 @@ $user_name = strtoupper($_SESSION['user_name']); // Retrieve from session after 
         <a href="#"><i class="fas fa-home"></i> Dashboard</a>
         <a href="#"><i class="fas fa-users"></i> Lecturer/Supervisor</a>
         <a href="#"><i class="fas fa-bookmark"></i> Bookmark</a>
-        <a href="#"><i class="fas fa-user"></i> Edit Profile</a>
+        <a href="edit_profile.php"><i class="fas fa-user"></i> Edit Profile</a>
         <a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a> <!-- Updated Logout link -->
 
     </div>
