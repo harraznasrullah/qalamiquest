@@ -44,11 +44,13 @@ $user_name = strtoupper($_SESSION['user_name']); // Retrieve from session after 
     <!-- Main Dashboard Content -->
     <div id="main-content">
         <div class="service-grid">
+        <a href="islamicsearch\islamicsearch.php">
             <div class="service-box">
                 <i class="fas fa-search"></i>
                 <h3>Islamic Explorer</h3>
                 <p>Providing verified resources from Quran, Hadith and Islamic Scholar.</p>
             </div>
+        </a>    
             <div class="service-box">
                 <i class="fas fa-comments"></i>
                 <h3>Student Lounge</h3>

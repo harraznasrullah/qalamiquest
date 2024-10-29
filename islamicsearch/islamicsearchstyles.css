@@ -1,0 +1,157 @@
+/* Apply Flexbox to the Body to Center Content */
+body {
+    font-family: 'Montserrat', sans-serif;
+    background-color: #f9fafb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Container holds both search form and results */
+.container {
+    text-align: center;
+    max-width: 800px;
+    width: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin: 20px;
+}
+
+/* Heading Styling */
+h1 {
+    font-size: 48px;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+/* Search Container: Ensure form stays visible */
+.search-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+/* Input field */
+.search-input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+/* Button Styling */
+button {
+    width: 100%; /* Responsive for small screens */
+    max-width: 200px;
+    padding: 10px;
+    background-color: #ffcc80;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #ffb74d;
+}
+
+/* Keyword tags and counts */
+.keyword-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 15px;
+    min-height: 30px;
+}
+
+.keyword-tag {
+    background-color: #e2e8f0;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 14px;
+}
+
+.keyword-count {
+    color: #666;
+    font-size: 14px;
+}
+
+/* Error message */
+.error-message {
+    color: #dc2626;
+    margin-bottom: 10px;
+}
+
+/* Search results */
+.results {
+    margin-top: 20px;
+    text-align: left;
+}
+
+/* Individual Ayat block */
+.ayat {
+    background-color: white;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.highlight {
+    background-color: #fff3cd;
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+
+/* Arabic text with right alignment */
+.arabic-text {
+    font-size: 20px;
+    margin: 10px 0;
+    direction: rtl;
+    text-align: right;
+}
+
+.translation {
+    color: #666;
+    margin-top: 10px;
+}
+
+/* Pagination controls */
+.pagination {
+    margin-top: 30px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.pagination a {
+    padding: 8px 12px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    text-decoration: none;
+    color: #333;
+}
+
+.pagination a.active {
+    background-color: #ffcc80;
+    border-color: #ffcc80;
+}
+
+.pagination a:hover {
+    background-color: #f5f5f5;
+}
+
