@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $_SESSION['proposal']['problem_statement'] = $_POST['problem_statement'];
 
         // Redirect to Step 3
-        header("Location: step3.php");
+        header("Location: step2.php");
         exit();
     }
 }

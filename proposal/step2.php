@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     if (empty($errors)) {
         $_SESSION['proposal']['objectives'] = $objectives;
-        header("Location: proposal_step3.php");
+        header("Location: step3.php");
         exit();
     }
 }
