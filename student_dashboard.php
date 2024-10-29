@@ -56,7 +56,7 @@ $user_name = strtoupper($_SESSION['user_name']); // Retrieve from session after 
                 <h3>Student Lounge</h3>
                 <p>Connecting with others and exchanging ideas.</p>
             </div>
-            <div class="service-box">
+            <div class="service-box" onclick="window.location.href='proposal/step1.php'">
                 <i class="fas fa-edit"></i>
                 <h3>Add/Edit Proposal</h3>
                 <p>Guiding you to write a proper proposal.</p>
