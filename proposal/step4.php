@@ -135,7 +135,7 @@ $savedQuestions = $_SESSION['proposal']['research_questions'] ?? ['', ''];
                 <button type="button" class="btn btn-secondary" onclick="window.location.href='step3.php'">
                     <i class="fas fa-arrow-left"></i> Previous Step
                 </button>
-                <button type="submit" class="btn btn-primary" onclick="window.location.href='step5.php'">
+                <button type="submit" class="btn btn-primary">
                     Next Step <i class="fas fa-arrow-right"></i>
                 </button>
             </div>

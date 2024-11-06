@@ -120,7 +120,7 @@ $savedProblem = $_SESSION['proposal']['problem_statement'] ?? '';
                 <button type="button" class="btn btn-secondary" onclick="window.location.href='../student_dashboard.php'">
                     <i class="fas fa-arrow-left"></i> Back to Dashboard
                 </button>
-                <button type="submit" class="btn btn-primary" onclick="window.location.href='step2.php'">
+                <button type="submit" class="btn btn-primary"></button>
                     Next Step <i class="fas fa-arrow-right"></i>
                 </button>
             </div>
