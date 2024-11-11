@@ -9,6 +9,8 @@ $currentPage = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $offset = ($currentPage - 1) * $resultsPerPage;
 $totalResults = 0;
 
+$user_name = strtoupper($_SESSION['user_name']); // Retrieve from session after login
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST' || (isset($_GET['keywords']) && !empty($_GET['keywords']))) {
     $keywords = $_SERVER['REQUEST_METHOD'] == 'POST' ? $_POST['keywords'] : $_GET['keywords'];
     // Split keywords by comma and trim whitespace
@@ -93,6 +95,44 @@ $conn->close();
 
 </head>
 <body>
+
+    <!-- Navbar -->
+    <div class="navbar">
+        <div class="navbar-left">
+            <button class="open-btn" onclick="toggleSidebar()">☰</button> <!-- Sidebar toggle button -->
+            QalamiQuest
+        </div>
+        <div class="navbar-right">
+            <i class="fas fa-bell bell-icon"></i> <!-- Bell icon -->
+            <span><?php echo $user_name; ?></span> <!-- Display logged in user's name -->
+            <i class="fas fa-user"></i> <!-- Profile icon -->
+        </div>
+    </div>
+
+    <div class="sidebar" id="sidebar">
+        <a href="/../student_dashboard.php"><i class="fas fa-home"></i> Dashboard</a>
+        <a href="#"><i class="fas fa-users"></i> Lecturer/Supervisor</a>
+        <a href="#"><i class="fas fa-bookmark"></i> Bookmark</a>
+        <a href="edit_profile.php"><i class="fas fa-user"></i> Edit Profile</a>
+        <a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a> <!-- Updated Logout link -->
+    </div>
+
+        <!-- JavaScript to toggle sidebar -->
+        <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById("sidebar");
+            const mainContent = document.getElementById("main-content");
+
+            // Check if the sidebar is currently open or closed
+            if (sidebar.style.left === "0px") {
+                sidebar.style.left = "-300px"; // Close the sidebar
+                mainContent.style.marginLeft = "0"; // Reset the main content margin
+            } else {
+                sidebar.style.left = "0"; // Open the sidebar
+                mainContent.style.marginLeft = "240px"; // Shift the main content
+            }
+        }
+        </script>
 
     <div class="container">
         <h1>ISLAMIC EXPLORER</h1>
