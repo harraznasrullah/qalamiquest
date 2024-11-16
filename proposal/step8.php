@@ -1,75 +1,112 @@
 <?php
 session_start();
-// Check if user is logged in
+include('db_connection.php');
+
+// Check if the user is logged in
 if (!isset($_SESSION['user_name'])) {
     header("Location: login.php");
     exit();
 }
 
-// Check if methodology exists
-if (!isset($_SESSION['proposal']['methodology'])) {
-    header("Location: step7.php");
+// Check if proposal data exists in session
+if (!isset($_SESSION['proposal'])) {
+    header("Location: step1.php"); // Redirect to Step 1 if no proposal data exists
     exit();
 }
 
-// Handle form submission
+// Handle form submission for saving references in the session or database
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $errors = [];
-    
-    // Get references array
-    $references = $_POST['references'] ?? [];
-    
-    // Filter out empty references
-    $references = array_filter($references, function($ref) {
-        return trim($ref) !== '';
+    $references = array_filter($_POST['references'], function ($ref) {
+        return !empty(trim($ref));
     });
-    
-    // Validate at least one reference exists
-    if (empty($references)) {
-        $errors['references'] = "At least one reference is required";
+
+    // Validate that references are added
+    if (count($references) < 1) {
+        $errors['references'] = "Please provide at least one reference.";
     }
-    
-    // If validation passes, save and submit
+
     if (empty($errors)) {
+        // Store references in session
         $_SESSION['proposal']['references'] = $references;
-        
-        // Here you would typically save the complete proposal to database
-        // For now, we'll just set a success message
-        $_SESSION['submission_success'] = true;
-        
-        // You could add database insertion here
-        // Example: saveProposalToDatabase($_SESSION['proposal']);
-        
-        // Clear proposal from session after saving
-        unset($_SESSION['proposal']);
-        
-        // Return success response for AJAX
-        if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && 
-            strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
-            echo json_encode(['success' => true]);
-            exit;
+
+        // Get data from other steps
+        $title = $_SESSION['proposal']['title'];
+        $introduction = $_SESSION['proposal']['introduction'];
+        $problem_statement = $_SESSION['proposal']['problem_statement'];
+        $research_questions = json_encode($_SESSION['proposal']['research_questions']);  // Serialize research questions
+        $methodologies = $_SESSION['proposal']['methodology']; // Add methodology data
+        $referencesData = json_encode($references);  // Serialize references
+
+        // Handle saving to the database when "Save and Quit" or "Previous Step" or "Next Step" is clicked
+        $user_id = $_SESSION['user_id'];
+        $proposal_id = $_SESSION['proposal']['proposal_id'] ?? null;
+
+        if ($proposal_id) {
+            // Update existing proposal
+            $stmt = $conn->prepare("UPDATE proposals SET title = ?, introduction = ?, problem_statement = ?, research_questions = ?, methodologies = ?, reference = ?, status = 0, last_saved = NOW() WHERE proposal_id = ? AND user_id = ?");
+            $stmt->bind_param("ssssssii", $title, $introduction, $problem_statement, $research_questions, $methodologies, $referencesData, $proposal_id, $user_id);
+        } else {
+            // Insert a new proposal
+            $stmt = $conn->prepare("INSERT INTO proposals (user_id, title, introduction, problem_statement, research_questions, methodologies, reference, status, last_saved) VALUES (?, ?, ?, ?, ?, ?, ?, 0, NOW())");
+            $stmt->bind_param("issssss", $user_id, $title, $introduction, $problem_statement, $research_questions, $methodologies, $referencesData);
         }
-        
-        // Redirect for non-AJAX
-        header("Location: student_dashboard.php");
-        exit();
+
+        if ($stmt->execute()) {
+            if (!$proposal_id) {
+                $proposal_id = $stmt->insert_id;
+                $_SESSION['proposal']['proposal_id'] = $proposal_id;
+            }
+
+            // Check which button was clicked and redirect accordingly
+            if (isset($_POST['save_and_quit'])) {
+                header("Location: ../student_dashboard.php");
+                exit();
+            } elseif (isset($_POST['previous_step'])) {
+                // Go to Previous Step (Step 7)
+                header("Location: step7.php");
+                exit();
+            } else {
+                // Proceed to next step (Step 9)
+                header("Location: step9.php");
+                exit();
+            }
+        } else {
+            $errors['database'] = "Error saving data: " . $stmt->error;
+        }
     }
 }
 
-// Retrieve saved references if they exist
-$saved_references = $_SESSION['proposal']['references'] ?? [''];
-?>
+// Retrieve references from the database if they exist (for pre-filling)
+if (!isset($_SESSION['proposal']['references']) && isset($_SESSION['proposal']['proposal_id'])) {
+    $proposal_id = $_SESSION['proposal']['proposal_id'];
+    $stmt = $conn->prepare("SELECT reference FROM proposals WHERE proposal_id = ? AND user_id = ?");
+    $stmt->bind_param("ii", $proposal_id, $_SESSION['user_id']);
+    $stmt->execute();
+    $result = $stmt->get_result();
 
+    if ($result->num_rows > 0) {
+        $proposal = $result->fetch_assoc();
+        // Decode references if they are saved in JSON format
+        $_SESSION['proposal']['references'] = json_decode($proposal['reference'], true);
+    }
+}
+
+// Set the saved references from session or default to empty
+$savedReferences = $_SESSION['proposal']['references'] ?? [''];
+$_SESSION['proposal']['step8_completed'] = true;
+
+?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QalamiQuest - Research Proposal Step 8</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="proposal_style.css">
-    <style>
-        .references-container {
+    <style>  .references-container {
             background-color: #f8f9fa;
             padding: 25px;
             border-radius: 8px;
@@ -119,35 +156,7 @@ $saved_references = $_SESSION['proposal']['references'] ?? [''];
             padding: 5px;
         }
 
-        .guidelines {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 30px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
 
-        .guidelines h4 {
-            color: #2c3e50;
-            margin-bottom: 15px;
-        }
-
-        .guidelines ul {
-            list-style-type: none;
-            padding: 0;
-        }
-
-        .guidelines li {
-            margin-bottom: 12px;
-            display: flex;
-            align-items: start;
-            gap: 12px;
-        }
-
-        .guidelines i {
-            color: #007bff;
-            margin-top: 3px;
-        }
 
         /* Modal styles */
         .modal {
@@ -157,7 +166,7 @@ $saved_references = $_SESSION['proposal']['references'] ?? [''];
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0,0,0,0.5);
+            background-color: rgba(0, 0, 0, 0.5);
             z-index: 1000;
         }
 
@@ -191,17 +200,18 @@ $saved_references = $_SESSION['proposal']['references'] ?? [''];
         .close-btn:hover {
             background-color: #0056b3;
         }
-    </style>
+</style>
 </head>
+
 <body>
     <div class="proposal-container">
         <div class="header">
             <h1>References</h1>
-            <p>List all sources cited in your research proposal</p>
+            <p>List the references that will support your research proposal.</p>
         </div>
 
         <div class="progress-bar">
-            <?php for($i = 1; $i <= 8; $i++): ?>
+            <?php for ($i = 1; $i <= 8; $i++): ?>
                 <div class="step <?php echo $i == 8 ? 'active' : ''; ?>">
                     <div class="step-circle"><?php echo $i; ?></div>
                     <div class="step-label">Step <?php echo $i; ?></div>
@@ -210,7 +220,7 @@ $saved_references = $_SESSION['proposal']['references'] ?? [''];
         </div>
 
         <div class="guidelines">
-            <h4>Reference Guidelines</h4>
+            <h3>Reference Guidelines</h3>
             <ul>
                 <li>
                     <i class="fas fa-info-circle"></i>
@@ -227,112 +237,75 @@ $saved_references = $_SESSION['proposal']['references'] ?? [''];
             </ul>
         </div>
 
-        <form id="referenceForm" action="step8.php" method="POST">
+        <form action="step8.php" method="POST" id="referencesForm">
             <div class="references-container">
-                <div class="reference-controls">
-                    <h3>Reference List</h3>
-                    <button type="button" class="add-reference-btn" onclick="addReference()">
-                        <i class="fas fa-plus"></i> Add Reference
-                    </button>
-                </div>
-                
-                <div id="referencesList">
-                    <?php foreach($saved_references as $index => $reference): ?>
-                        <div class="reference-entry">
-                            <textarea 
-                                name="references[]" 
-                                placeholder="Enter reference in your chosen citation format..."
-                                required><?php echo htmlspecialchars($reference); ?></textarea>
-                            <?php if($index > 0): ?>
-                                <button type="button" class="remove-reference-btn" onclick="removeReference(this)">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            <?php endif; ?>
+                <?php foreach ($savedReferences as $index => $reference): ?>
+                    <div class="reference-entry">
+                        <div class="reference-header">
+                            <span class="reference-number"></span>
                         </div>
-                    <?php endforeach; ?>
-                </div>
-
-                <?php if (isset($errors['references'])): ?>
-                    <div class="error-message">
-                        <i class="fas fa-exclamation-circle"></i>
-                        <?php echo $errors['references']; ?>
+                        <textarea class="reference-input" name="references[]" placeholder="Enter your reference..." required><?php echo htmlspecialchars($reference); ?></textarea>
+                        <?php if ($index > 0): ?>
+                            <button type="button" class="remove-reference" onclick="removeReference(this)">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        <?php endif; ?>
+                        <?php if (isset($errors['reference_' . $index])): ?>
+                            <div class="error-message">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <?php echo $errors['reference_' . $index]; ?>
+                            </div>
+                        <?php endif; ?>
                     </div>
-                <?php endif; ?>
+                <?php endforeach; ?>
             </div>
 
+            <button type="button" class="add-reference-btn" onclick="addReference()">
+                <i class="fas fa-plus"></i> Add Another Reference
+            </button>
+
+            <?php if (isset($errors['references'])): ?>
+                <div class="error-message">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <?php echo $errors['references']; ?>
+                </div>
+            <?php endif; ?>
+
             <div class="button-group">
-                <button type="button" class="btn btn-secondary" onclick="window.location.href='step7.php'">
+                <button type="submit" name="previous_step" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Previous Step
                 </button>
                 <button type="submit" class="btn btn-primary">
-                    Submit Proposal <i class="fas fa-check"></i>
+                    Submit <i class="fas fa-check"></i>
+                </button>
+                <button type="submit" name="save_and_quit" class="btn btn-secondary">
+                    <i class="fas fa-save"></i> Save and Quit
                 </button>
             </div>
         </form>
     </div>
 
-    <!-- Success Modal -->
-    <div id="successModal" class="modal">
-        <div class="modal-content">
-            <h3>Success!</h3>
-            <p>Your proposal has been submitted. Wait for the approval.</p>
-            <button class="close-btn" onclick="window.location.href='student_dashboard.php'">Close</button>
-        </div>
-    </div>
-
     <script>
         function addReference() {
-            const referencesList = document.getElementById('referencesList');
-            const newReference = document.createElement('div');
-            newReference.className = 'reference-entry';
-            newReference.innerHTML = `
-                <textarea name="references[]" placeholder="Enter reference in your chosen citation format..." required></textarea>
-                <button type="button" class="remove-reference-btn" onclick="removeReference(this)">
-                    <i class="fas fa-trash"></i>
-                </button>
+            const container = document.querySelector('.references-container');
+            const newReference = `
+                <div class="reference-entry">
+                    <div class="reference-header">
+                        <span class="reference-number"></span>
+                    </div>
+                    <textarea class="reference-input" name="references[]" placeholder="Enter your reference..." required></textarea>
+                    <button type="button" class="remove-reference-btn" onclick="removeReference(this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
             `;
-            referencesList.appendChild(newReference);
+            container.insertAdjacentHTML('beforeend', newReference);
         }
 
         function removeReference(button) {
             button.closest('.reference-entry').remove();
         }
-
-        // Form submission handling
-        document.getElementById('referenceForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Get all non-empty references
-            const references = Array.from(document.getElementsByName('references[]'))
-                .map(textarea => textarea.value.trim())
-                .filter(value => value !== '');
-
-            if (references.length === 0) {
-                alert('Please add at least one reference');
-                return;
-            }
-
-            // Submit form via AJAX
-            const formData = new FormData(this);
-            
-            fetch('step8.php', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById('successModal').style.display = 'block';
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while submitting the proposal');
-            });
-        });
     </script>
 </body>
+
 </html>

@@ -1,8 +1,42 @@
 <?php
-session_start(); // If user authentication is required, session management is necessary
+session_start(); // Start session
+require 'db_connection.php'; // Include database connection
 
-// Example: Displaying the user's name if logged in
-$user_name = strtoupper($_SESSION['user_name']); // Retrieve from session after login
+// Check if the user is logged in
+if (!isset($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit;
+}
+
+// Handle "Add Proposal" navigation
+if (isset($_GET['action']) && $_GET['action'] === 'add_proposal') {
+    // Insert a new proposal for the user in the database
+    $userId = $_SESSION['user_id'];
+    $query = "INSERT INTO proposals (user_id, title, status, last_saved) VALUES (?, 'New Proposal (Rename)', 0, NOW())";
+    $stmt = $conn->prepare($query);
+    $stmt->bind_param('i', $userId);
+    if ($stmt->execute()) {
+        // Get the ID of the newly created proposal
+        $proposalId = $stmt->insert_id;
+        $stmt->close();
+
+        // Redirect to step1.php with the proposal ID
+        header("Location: proposal/step1.php?proposal_id=$proposalId");
+        exit;
+    } else {
+        $error = "Failed to create a new proposal. Please try again.";
+    }
+}
+
+// Fetch recent proposals for the logged-in user
+$userId = $_SESSION['user_id'];
+$query = "SELECT proposal_id, title, status, last_saved FROM proposals WHERE user_id = ? ORDER BY last_saved DESC";
+$stmt = $conn->prepare($query);
+$stmt->bind_param('i', $userId);
+$stmt->execute();
+$result = $stmt->get_result();
+$recentProposals = $result->fetch_all(MYSQLI_ASSOC);
+$stmt->close();
 ?>
 
 <!DOCTYPE html>
@@ -26,7 +60,7 @@ $user_name = strtoupper($_SESSION['user_name']); // Retrieve from session after 
         </div>
         <div class="navbar-right">
             <i class="fas fa-bell bell-icon"></i> <!-- Bell icon -->
-            <span><?php echo $user_name; ?></span> <!-- Display logged in user's name -->
+            <span><?php echo strtoupper($_SESSION['user_name']); ?></span> <!-- Display logged in user's name -->
             <i class="fas fa-user"></i> <!-- Profile icon -->
         </div>
     </div>
@@ -37,8 +71,7 @@ $user_name = strtoupper($_SESSION['user_name']); // Retrieve from session after 
         <a href="#"><i class="fas fa-users"></i> Lecturer/Supervisor</a>
         <a href="#"><i class="fas fa-bookmark"></i> Bookmark</a>
         <a href="edit_profile.php"><i class="fas fa-user"></i> Edit Profile</a>
-        <a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a> <!-- Updated Logout link -->
-
+        <a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 
     <!-- Main Dashboard Content -->
@@ -49,14 +82,13 @@ $user_name = strtoupper($_SESSION['user_name']); // Retrieve from session after 
                 <h3>Islamic Explorer</h3>
                 <p>Providing verified resources from Quran, Hadith and Islamic Scholar.</p>
             </div>
-        </>    
             <div class="service-box">
                 <i class="fas fa-comments"></i>
                 <h3>Student Lounge</h3>
                 <p>Connecting with others and exchanging ideas.</p>
             </div>
-            <div class="service-box" onclick="window.location.href='proposal/step1.php'">
-                <i class="fas fa-edit"></i>
+            <div class="service-box" onclick="window.location.href='student_dashboard.php?action=add_proposal'">
+            <i class="fas fa-edit"></i>
                 <h3>Add/Edit Proposal</h3>
                 <p>Guiding you to write a proper proposal.</p>
             </div>
@@ -79,11 +111,39 @@ $user_name = strtoupper($_SESSION['user_name']); // Retrieve from session after 
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>No recent activity</td>
-                        <td>-</td>
-                        <td>-</td>
-                    </tr>
+                    <?php if (empty($recentProposals)): ?>
+                        <tr>
+                            <td>No recent activity</td>
+                            <td>-</td>
+                            <td>-</td>
+                        </tr>
+                    <?php else: ?>
+                        <?php foreach ($recentProposals as $proposal): ?>
+                            <tr>
+                            <td><a href="proposal/step1.php?proposal_id=<?php echo $proposal['proposal_id']; ?>"><?php echo $proposal['title']; ?></a></td>
+                
+                                <td><?php echo date('d-m-Y', strtotime($proposal['last_saved'])) . ' | ' . date('h:i:s A', strtotime($proposal['last_saved'])); ?>
+                                </td>
+                                <td>
+                                    <?php
+                                    switch ($proposal['status']) {
+                                        case 0:
+                                            echo 'In Progress';
+                                            break;
+                                        case 1:
+                                            echo 'Submitted';
+                                            break;
+                                        case 2:
+                                            echo 'Approved';
+                                            break;
+                                        default:
+                                            echo 'Unknown';
+                                    }
+                                    ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </tbody>
             </table>
         </div>

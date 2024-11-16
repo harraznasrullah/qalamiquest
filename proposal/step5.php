@@ -1,5 +1,7 @@
 <?php
 session_start();
+include('db_connection.php');
+
 // Check if user is logged in
 if (!isset($_SESSION['user_name'])) {
     header("Location: login.php");
@@ -12,7 +14,24 @@ if (!isset($_SESSION['proposal']['research_questions'])) {
     exit();
 }
 
-// Handle form submission
+// Retrieve interview questions from the database if not already in the session
+if (!isset($_SESSION['proposal']['interview_questions']) && isset($_SESSION['proposal']['proposal_id'])) {
+    $proposal_id = $_SESSION['proposal']['proposal_id'];
+    $stmt = $conn->prepare("SELECT interview_questions FROM proposals WHERE proposal_id = ? AND user_id = ?");
+    $stmt->bind_param("ii", $proposal_id, $_SESSION['user_id']);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows > 0) {
+        $proposal = $result->fetch_assoc();
+        // Decode interview questions if they are saved in JSON format
+        $_SESSION['proposal']['interview_questions'] = json_decode($proposal['interview_questions'], true);
+    }
+}
+
+// Retrieve saved interview questions from the session or set defaults
+$savedQuestions = $_SESSION['proposal']['interview_questions'] ?? [];
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $errors = [];
     $interview_questions = [];
@@ -22,31 +41,61 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $questions = array_filter($_POST['interview_questions'][$index] ?? [], function($q) {
             return !empty(trim($q));
         });
-        
+
         // Validate minimum 2 interview questions per research question
         if (count($questions) < 2) {
             $errors["research_$index"] = "Please provide at least 2 interview questions for Research Question " . ($index + 1);
         }
-        
+
         // Validate each question ends with a question mark
         foreach ($questions as $q_index => $question) {
             if (!preg_match('/\?$/', trim($question))) {
                 $errors["question_{$index}_{$q_index}"] = "Question must end with a question mark";
             }
         }
-        
+
         $interview_questions[$index] = $questions;
     }
-    
+
     if (empty($errors)) {
         $_SESSION['proposal']['interview_questions'] = $interview_questions;
-        header("Location: step6.php");
-        exit();
+        $user_id = $_SESSION['user_id'];
+        $proposal_id = $_SESSION['proposal']['proposal_id'] ?? null;
+        $interviewQuestionsData = json_encode($interview_questions);
+
+        // Save data to database when navigating or saving
+        if ($proposal_id) {
+            $stmt = $conn->prepare("UPDATE proposals SET interview_questions = ?, last_saved = NOW() WHERE proposal_id = ? AND user_id = ?");
+            $stmt->bind_param("sii", $interviewQuestionsData, $proposal_id, $user_id);
+        } else {
+            // Insert if a new proposal is being created
+            $stmt = $conn->prepare("INSERT INTO proposals (user_id, interview_questions, last_saved) VALUES (?, ?, NOW())");
+            $stmt->bind_param("is", $user_id, $interviewQuestionsData);
+        }
+
+        if ($stmt->execute()) {
+            if (!$proposal_id) {
+                $_SESSION['proposal']['proposal_id'] = $stmt->insert_id;
+            }
+
+            // Handle navigation based on the clicked button
+            if (isset($_POST['next_step'])) {
+                header("Location: step6.php");
+                exit();
+            } elseif (isset($_POST['previous_step'])) {
+                header("Location: step4.php");
+                exit();
+            } elseif (isset($_POST['save_and_quit'])) {
+                header("Location: ../student_dashboard.php");
+                exit();
+            }
+        } else {
+            $errors['database'] = "Error saving data: " . $stmt->error;
+        }
     }
 }
 
-// Retrieve saved interview questions if they exist
-$savedQuestions = $_SESSION['proposal']['interview_questions'] ?? [];
+$_SESSION['proposal']['step5_completed'] = true;
 ?>
 
 <!DOCTYPE html>
@@ -149,26 +198,28 @@ $savedQuestions = $_SESSION['proposal']['interview_questions'] ?? [];
             <?php endforeach; ?>
 
             <div class="button-group">
-                <button type="button" class="btn btn-secondary" onclick="window.location.href='step4.php'">
+                <button type="submit" name="previous_step" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Previous Step
                 </button>
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" name="next_step" class="btn btn-primary">
                     Next Step <i class="fas fa-arrow-right"></i>
+                </button>
+                <button type="submit" name="save_and_quit" class="btn btn-secondary">
+                    <i class="fas fa-save"></i> Save and Quit
                 </button>
             </div>
         </form>
     </div>
 
     <script>
+        // Add new interview question
         function addInterviewQuestion(researchIndex) {
             const container = document.querySelector(`.interview-questions-container[data-research-index="${researchIndex}"]`);
-            const questionCount = container.children.length + 1;
-            
-            const questionDiv = document.createElement('div');
-            questionDiv.className = 'interview-question';
-            questionDiv.innerHTML = `
+            const newQuestion = document.createElement('div');
+            newQuestion.classList.add('interview-question');
+            newQuestion.innerHTML = `
                 <div class="interview-question-header">
-                    <span class="question-number">Q${questionCount}</span>
+                    <span class="question-number">Q3</span>
                     <button type="button" class="remove-question" onclick="removeInterviewQuestion(this)">
                         <i class="fas fa-times"></i>
                     </button>
@@ -179,108 +230,13 @@ $savedQuestions = $_SESSION['proposal']['interview_questions'] ?? [];
                     placeholder="Enter your interview question..."
                     required></textarea>
             `;
-            
-            container.appendChild(questionDiv);
-            updateQuestionNumbers(container);
+            container.appendChild(newQuestion);
         }
 
+        // Remove an interview question
         function removeInterviewQuestion(button) {
-            const questionDiv = button.closest('.interview-question');
-            const container = questionDiv.closest('.interview-questions-container');
-            
-            if (container.children.length > 2) {
-                questionDiv.remove();
-                updateQuestionNumbers(container);
-            } else {
-                showError("You must have at least 2 interview questions", container);
-            }
+            button.closest('.interview-question').remove();
         }
-
-        function updateQuestionNumbers(container) {
-    const questions = container.querySelectorAll('.interview-question');
-    questions.forEach((question, index) => {
-        const numberSpan = question.querySelector('.question-number');
-        numberSpan.textContent = `Q${index + 1}`;
-        
-        // Update remove button visibility
-        const removeButton = question.querySelector('.remove-question');
-        if (removeButton) {
-            removeButton.style.display = index < 2 ? 'none' : 'block';
-        }
-    });
-}
-
-function showError(message, container) {
-    // Remove any existing error messages
-    const existingError = container.querySelector('.temp-error');
-    if (existingError) {
-        existingError.remove();
-    }
-    
-    // Create and show new error message
-    const errorDiv = document.createElement('div');
-    errorDiv.className = 'error-message temp-error';
-    errorDiv.innerHTML = `
-        <i class="fas fa-exclamation-circle"></i>
-        ${message}
-    `;
-    
-    // Insert error after the last question
-    container.appendChild(errorDiv);
-    
-    // Remove error message after 3 seconds
-    setTimeout(() => {
-        errorDiv.remove();
-    }, 3000);
-}
-
-// Form validation before submission
-document.getElementById('interviewQuestionsForm').addEventListener('submit', function(e) {
-    let isValid = true;
-    const containers = document.querySelectorAll('.interview-questions-container');
-    
-    containers.forEach(container => {
-        const questions = container.querySelectorAll('.question-input');
-        const filledQuestions = Array.from(questions).filter(q => q.value.trim() !== '');
-        
-        // Check minimum question requirement
-        if (filledQuestions.length < 2) {
-            isValid = false;
-            showError("Please provide at least 2 interview questions", container);
-        }
-        
-        // Check if questions end with question mark
-        filledQuestions.forEach(question => {
-            if (!question.value.trim().endsWith('?')) {
-                isValid = false;
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'error-message';
-                errorDiv.innerHTML = `
-                    <i class="fas fa-exclamation-circle"></i>
-                    Question must end with a question mark
-                `;
-                question.parentElement.appendChild(errorDiv);
-            }
-        });
-    });
-    
-    if (!isValid) {
-        e.preventDefault();
-    }
-});
-
-// Auto-resize textareas as content grows
-document.addEventListener('input', function(e) {
-    if (e.target.classList.contains('question-input')) {
-        e.target.style.height = 'auto';
-        e.target.style.height = (e.target.scrollHeight) + 'px';
-    }
-});
-
-// Initialize textarea heights on page load
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.question-input').forEach(textarea => {
-        textarea.style.height = 'auto';
-        textarea.style.height = (textarea.scrollHeight) + 'px';
-    });
-});
+    </script>
+</body>
+</html>
