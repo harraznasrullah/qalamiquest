@@ -10,7 +10,7 @@ if (!isset($_SESSION['user_name'])) {
 
 // Check if proposal data exists in session
 if (!isset($_SESSION['proposal'])) {
-    header("Location: step1.php"); // Redirect to Step 1 if no proposal data exists
+    header("Location: step1.php");
     exit();
 }
 
@@ -34,22 +34,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $title = $_SESSION['proposal']['title'];
         $introduction = $_SESSION['proposal']['introduction'];
         $problem_statement = $_SESSION['proposal']['problem_statement'];
-        $research_questions = json_encode($_SESSION['proposal']['research_questions']);  // Serialize research questions
-        $methodologies = $_SESSION['proposal']['methodology']; // Add methodology data
-        $referencesData = json_encode($references);  // Serialize references
-
-        // Handle saving to the database when "Save and Quit" or "Previous Step" or "Next Step" is clicked
+        $research_questions = json_encode($_SESSION['proposal']['research_questions']);
+        $methodologies = $_SESSION['proposal']['methodology'];
+        $referencesData = json_encode($references);
         $user_id = $_SESSION['user_id'];
         $proposal_id = $_SESSION['proposal']['proposal_id'] ?? null;
+        $status = 0;
+
+        if (isset($_POST['submit'])) {
+            $status = 1; // Mark as submitted
+        }
 
         if ($proposal_id) {
             // Update existing proposal
-            $stmt = $conn->prepare("UPDATE proposals SET title = ?, introduction = ?, problem_statement = ?, research_questions = ?, methodologies = ?, reference = ?, status = 0, last_saved = NOW() WHERE proposal_id = ? AND user_id = ?");
-            $stmt->bind_param("ssssssii", $title, $introduction, $problem_statement, $research_questions, $methodologies, $referencesData, $proposal_id, $user_id);
+            $stmt = $conn->prepare("UPDATE proposals SET title = ?, introduction = ?, problem_statement = ?, research_questions = ?, methodologies = ?, reference = ?, status = ?, last_saved = NOW() WHERE proposal_id = ? AND user_id = ?");
+            $stmt->bind_param("ssssssiii", $title, $introduction, $problem_statement, $research_questions, $methodologies, $referencesData, $status, $proposal_id, $user_id);
         } else {
             // Insert a new proposal
-            $stmt = $conn->prepare("INSERT INTO proposals (user_id, title, introduction, problem_statement, research_questions, methodologies, reference, status, last_saved) VALUES (?, ?, ?, ?, ?, ?, ?, 0, NOW())");
-            $stmt->bind_param("issssss", $user_id, $title, $introduction, $problem_statement, $research_questions, $methodologies, $referencesData);
+            $stmt = $conn->prepare("INSERT INTO proposals (user_id, title, introduction, problem_statement, research_questions, methodologies, reference, status, last_saved) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+            $stmt->bind_param("issssssi", $user_id, $title, $introduction, $problem_statement, $research_questions, $methodologies, $referencesData, $status);
         }
 
         if ($stmt->execute()) {
@@ -58,17 +61,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $_SESSION['proposal']['proposal_id'] = $proposal_id;
             }
 
-            // Check which button was clicked and redirect accordingly
-            if (isset($_POST['save_and_quit'])) {
+            if (isset($_POST['submit'])) {
+                $_SESSION['proposal_submitted'] = true; // Set pop-up session
+                echo "<script>
+                alert('Your proposal has been submitted. Wait for the approval.');
+                window.location.href = '../student_dashboard.php';
+            </script>";                
+            exit();
+            } elseif (isset($_POST['save_and_quit'])) {
                 header("Location: ../student_dashboard.php");
                 exit();
             } elseif (isset($_POST['previous_step'])) {
-                // Go to Previous Step (Step 7)
                 header("Location: step7.php");
-                exit();
-            } else {
-                // Proceed to next step (Step 9)
-                header("Location: step9.php");
                 exit();
             }
         } else {
@@ -77,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 
-// Retrieve references from the database if they exist (for pre-filling)
+// Retrieve references from the database if they exist
 if (!isset($_SESSION['proposal']['references']) && isset($_SESSION['proposal']['proposal_id'])) {
     $proposal_id = $_SESSION['proposal']['proposal_id'];
     $stmt = $conn->prepare("SELECT reference FROM proposals WHERE proposal_id = ? AND user_id = ?");
@@ -87,7 +91,6 @@ if (!isset($_SESSION['proposal']['references']) && isset($_SESSION['proposal']['
 
     if ($result->num_rows > 0) {
         $proposal = $result->fetch_assoc();
-        // Decode references if they are saved in JSON format
         $_SESSION['proposal']['references'] = json_decode($proposal['reference'], true);
     }
 }
@@ -95,8 +98,8 @@ if (!isset($_SESSION['proposal']['references']) && isset($_SESSION['proposal']['
 // Set the saved references from session or default to empty
 $savedReferences = $_SESSION['proposal']['references'] ?? [''];
 $_SESSION['proposal']['step8_completed'] = true;
-
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -275,7 +278,7 @@ $_SESSION['proposal']['step8_completed'] = true;
                 <button type="submit" name="previous_step" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Previous Step
                 </button>
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" class="btn btn-primary" name="submit" onclick="return confirmSubmission()">
                     Submit <i class="fas fa-check"></i>
                 </button>
                 <button type="submit" name="save_and_quit" class="btn btn-secondary">
@@ -286,6 +289,9 @@ $_SESSION['proposal']['step8_completed'] = true;
     </div>
 
     <script>
+        function confirmSubmission() {
+    return confirm("Are you sure you want to submit? Once submitted, you cannot edit or change the proposal.");
+}
         function addReference() {
             const container = document.querySelector('.references-container');
             const newReference = `
@@ -305,6 +311,7 @@ $_SESSION['proposal']['step8_completed'] = true;
         function removeReference(button) {
             button.closest('.reference-entry').remove();
         }
+        
     </script>
 </body>
 

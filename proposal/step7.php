@@ -1,5 +1,9 @@
 <?php
 session_start();
+
+if (isset($_SESSION['proposal_submitted'])) {
+    unset($_SESSION['proposal_submitted']); // Remove it if it exists
+}
 // Check if user is logged in
 if (!isset($_SESSION['user_name'])) {
     header("Location: login.php");
