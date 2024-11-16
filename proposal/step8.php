@@ -158,37 +158,7 @@ $_SESSION['proposal']['step8_completed'] = true;
             cursor: pointer;
             padding: 5px;
         }
-
-
-
-        /* Modal styles */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-        }
-
-        .modal-content {
-            position: relative;
-            background-color: #fff;
-            margin: 15% auto;
-            padding: 20px;
-            border-radius: 8px;
-            width: 90%;
-            max-width: 500px;
-            text-align: center;
-        }
-
-        .modal h3 {
-            color: #2c3e50;
-            margin-bottom: 15px;
-        }
-
+        
         .close-btn {
             display: inline-block;
             padding: 10px 20px;
