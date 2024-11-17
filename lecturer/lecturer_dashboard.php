@@ -1,8 +1,16 @@
 <?php
 session_start(); // Ensure session is started to retrieve user data
+include('../db_connection.php');
 
 // Example: Displaying the lecturer's name if logged in
 $lecturer_name = strtoupper($_SESSION['user_name']); // Retrieve from session after login
+
+// Add a query to get the number of pending supervisor requests
+// Note: Replace with your actual database connection and query
+$query = "SELECT COUNT(*) as request_count FROM supervisors WHERE status = 'pending'";
+$result = $conn->query($query);
+$row = $result->fetch_assoc();
+$pending_requests = $row['request_count'];
 ?>
 
 <!DOCTYPE html>
@@ -12,20 +20,92 @@ $lecturer_name = strtoupper($_SESSION['user_name']); // Retrieve from session af
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lecturer Dashboard - QalamiQuest</title>
-    <link rel="stylesheet" href="../styles.css"> <!-- Link to your external CSS file -->
-    <link rel="stylesheet" href="lecturer_style.css"> <!-- Link to your external CSS file -->
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="lecturer_style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Existing styles */
+        .approval-btn:hover {
+            background-color: #004d4d;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        /* New notification styles */
+        .relative {
+            position: relative;
+        }
+
+        .absolute {
+            position: absolute;
+        }
+
+        .-top-2 {
+            top: -0.5rem;
+        }
+
+        .-right-2 {
+            right: -0.5rem;
+        }
+
+        .inline-flex {
+            display: inline-flex;
+        }
+
+        .items-center {
+            align-items: center;
+        }
+
+        .justify-center {
+            justify-content: center;
+        }
+
+        .rounded-full {
+            border-radius: 9999px;
+        }
+
+        .bg-red-500 {
+            background-color: #ef4444;
+        }
+
+        .text-xs {
+            font-size: 0.75rem;
+            line-height: 1rem;
+        }
+
+        .text-white {
+            color: #ffffff;
+        }
+
+        .h-5 {
+            height: 1.25rem;
+        }
+
+        .w-5 {
+            width: 1.25rem;
+        }
+
+        /* Additional styles for notification badge */
+        .notification-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background-color: #ef4444;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 12px;
+            min-width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+    </style>
 </head>
-<style>
-    .approval-btn:hover {
-        background-color: #004d4d;
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
-        /* Slightly stronger shadow on hover */
-    }
-</style>
 
 <body>
-
     <!-- Navbar -->
     <div class="navbar">
         <div class="navbar-left">
@@ -58,8 +138,13 @@ $lecturer_name = strtoupper($_SESSION['user_name']); // Retrieve from session af
                 <button class="approval-btn" onclick="window.location.href='approval.php'">
                     Approval
                 </button>
-                <button class="approval-btn" onclick="window.location.href='approve_sv.php'">
+                <button class="approval-btn relative" onclick="window.location.href='approve_sv.php'">
                     Supervisor Request
+                    <?php if ($pending_requests > 0): ?>
+                    <div class="notification-badge">
+                        <?php echo $pending_requests; ?>
+                    </div>
+                    <?php endif; ?>
                 </button>
             </div>
         </div>
@@ -101,7 +186,6 @@ $lecturer_name = strtoupper($_SESSION['user_name']); // Retrieve from session af
                 </tbody>
             </table>
         </div>
-
     </div>
 
     <!-- JavaScript to toggle sidebar -->
