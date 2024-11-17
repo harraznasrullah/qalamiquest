@@ -63,7 +63,7 @@ body {
 .navbar-right button:hover {
     background: #004d4d;
     /* Darker shade of green on hover */
-    transform: scale(1.05);
+    transform: scale(1.05);   
     /* Slight enlargement on hover */
 }
 
@@ -609,10 +609,6 @@ p {
     border: none;
     color: white;
     padding: 10px;
-}
-
-.open-btn:hover {
-    background-color: #444;
 }
 
 /* Main content when sidebar is open */

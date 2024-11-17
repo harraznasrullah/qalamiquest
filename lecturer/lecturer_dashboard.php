@@ -12,10 +12,17 @@ $lecturer_name = strtoupper($_SESSION['user_name']); // Retrieve from session af
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lecturer Dashboard - QalamiQuest</title>
-    <link rel="stylesheet" href="styles.css"> <!-- Link to your external CSS file -->
+    <link rel="stylesheet" href="../styles.css"> <!-- Link to your external CSS file -->
     <link rel="stylesheet" href="lecturer_style.css"> <!-- Link to your external CSS file -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
+<style>
+    .approval-btn:hover {
+        background-color: #004d4d;
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        /* Slightly stronger shadow on hover */
+    }
+</style>
 
 <body>
 
@@ -36,8 +43,8 @@ $lecturer_name = strtoupper($_SESSION['user_name']); // Retrieve from session af
     <div class="sidebar" id="sidebar">
         <a href="lecturer_dashboard.php"><i class="fas fa-home"></i> Dashboard</a>
         <a href="approval.php"><i class="fas fa-check-circle"></i> Approval</a>
-        <a href="edit_profile.php"><i class="fas fa-user"></i> Edit Profile</a>
-        <a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        <a href="../edit_profile.php"><i class="fas fa-user"></i> Edit Profile</a>
+        <a href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 
     <!-- Main Content -->
@@ -48,13 +55,12 @@ $lecturer_name = strtoupper($_SESSION['user_name']); // Retrieve from session af
                 <i class="fas fa-clipboard-list"></i> OVERVIEW
             </div>
             <div class="overview-controls">
-                <button class="approval-btn">
+                <button class="approval-btn" onclick="window.location.href='approval.php'">
                     Approval
                 </button>
-                <div class="search-bar">
-                    <input type="text" placeholder="Search Title">
-                    <i class="fas fa-search"></i>
-                </div>
+                <button class="approval-btn" onclick="window.location.href='approve_sv.php'">
+                    Supervisor Request
+                </button>
             </div>
         </div>
 
