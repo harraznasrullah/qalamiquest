@@ -1,6 +1,6 @@
 <?php
 session_start();
-include('db_connection.php');
+include('../db_connection.php');
 
 // Check if lecturer is logged in
 if (!isset($_SESSION['user_name'])) {
