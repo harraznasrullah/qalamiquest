@@ -48,7 +48,6 @@ if ($result->num_rows > 0) {
         'title' => $savedTitle,
         'introduction' => $savedIntro,
         'problem_statement' => $savedProblem,
-        'status' => $status
     ];
 
     // Check if proposal is already submitted or approved

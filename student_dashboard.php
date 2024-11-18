@@ -101,7 +101,7 @@ $stmt->close();
 
         <!-- Recent Section -->
         <div class="recent-section">
-            <h3>Recent</h3>
+            <h2>Recent</h2>
             <table class="recent-table">
                 <thead>
                     <tr>
@@ -112,52 +112,53 @@ $stmt->close();
                     </tr>
                 </thead>
                 <tbody>
-                    <?php if (empty($recentProposals)): ?>
-                        <tr>
-                            <td colspan="4">No recent activity</td>
-                        </tr>
-                    <?php else: ?>
-                        <?php foreach ($recentProposals as $proposal): ?>
-                            <tr>
-                                <td>
-                                    <a href="proposal/step1.php?proposal_id=<?php echo $proposal['proposal_id']; ?>">
-                                        <?php echo $proposal['title']; ?>
-                                    </a>
-                                </td>
-                                <td><?php echo date('d-m-Y | h:i:s A', strtotime($proposal['last_saved'])); ?></td>
-                                <td>
-                                    <?php
-                                    switch ($proposal['status']) {
-                                        case 0:
-                                            echo 'In Progress';
-                                            break;
-                                        case 1:
-                                            echo 'Submitted';
-                                            break;
-                                        case 2:
-                                            echo 'Approved';
-                                            break;
-                                        case 3:
-                                            echo 'Required Progress';
-                                            break;
-                                        default:
-                                            echo 'Unknown';
-                                    }
-                                    ?>
-                                </td>
-                                <td>
-                                    <!-- View Comments Button -->
-                                    <?php if ($proposal['status'] >= 0): ?>
-                                        <button
-                                            onclick="window.location.href='view_comments.php?proposal_id=<?php echo $proposal['proposal_id']; ?>'">
-                                            View
-                                        </button>
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
+    <?php if (empty($recentProposals)): ?>
+        <tr>
+            <td colspan="4">No recent activity</td>
+        </tr>
+    <?php else: ?>
+        <?php foreach ($recentProposals as $proposal): ?>
+            <tr>
+                <td>
+                    <!-- Use <p> instead of <a> and add icon -->
+                    <p style="cursor: pointer;" onclick="checkProposalStatus(<?php echo $proposal['status']; ?>, <?php echo $proposal['proposal_id']; ?>)">
+                        <i class="fas fa-file"></i> <!-- Icon for edit -->
+                        <?php echo $proposal['title']; ?>
+                    </p>
+                </td>
+                <td><?php echo date('d-m-Y | h:i:s A', strtotime($proposal['last_saved'])); ?></td>
+                <td>
+                    <?php
+                    switch ($proposal['status']) {
+                        case 0:
+                            echo 'In Progress';
+                            break;
+                        case 1:
+                            echo 'Submitted';
+                            break;
+                        case 2:
+                            echo 'Approved';
+                            break;
+                        case 3:
+                            echo 'Required Progress';
+                            break;
+                        default:
+                            echo 'Unknown';
+                    }
+                    ?>
+                </td>
+                <td>
+                    <!-- View Comments Button -->
+                    <?php if ($proposal['status'] >= 0): ?>
+                        <button onclick="window.location.href='view_comment.php?proposal_id=<?php echo $proposal['proposal_id']; ?>'">
+                            View
+                        </button>
                     <?php endif; ?>
-                </tbody>
+                </td>
+            </tr>
+        <?php endforeach; ?>
+    <?php endif; ?>
+</tbody>
 
             </table>
         </div>
@@ -176,6 +177,16 @@ $stmt->close();
             } else {
                 sidebar.style.left = "0"; // Open the sidebar
                 mainContent.style.marginLeft = "240px"; // Shift the main content
+            }
+        }
+
+        // JavaScript function to check proposal status
+        function checkProposalStatus(status, proposalId) {
+            if (status === 1 || status === 2) {  // Check if status is Submitted (1) or Approved (2)
+                alert("This proposal cannot be edited because it has been submitted or approved.");
+            } else {
+                // If the proposal is not submitted or approved, redirect to the editing page
+                window.location.href = "proposal/step1.php?proposal_id=" + proposalId;
             }
         }
     </script>
