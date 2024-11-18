@@ -39,11 +39,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $referencesData = json_encode($references);
         $user_id = $_SESSION['user_id'];
         $proposal_id = $_SESSION['proposal']['proposal_id'] ?? null;
-        $status = 0;
+        // Preserve the current status if it exists in the session or database
+if (!isset($_SESSION['proposal']['status']) && $proposal_id) {
+    $stmt = $conn->prepare("SELECT status FROM proposals WHERE proposal_id = ? AND user_id = ?");
+    $stmt->bind_param("ii", $proposal_id, $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result->num_rows > 0) {
+        $row = $result->fetch_assoc();
+        $_SESSION['proposal']['status'] = $row['status'];
+    }
+}
+$status = $_SESSION['proposal']['status'] ?? 0;
 
-        if (isset($_POST['submit'])) {
-            $status = 1; // Mark as submitted
-        }
+
+if (isset($_POST['submit'])) {
+    $status = 1; // Mark as submitted
+} elseif (isset($_POST['save_and_quit'])) {
+    // Retain current status without changing it
+    $status = $_SESSION['proposal']['status'] ?? $status;
+}
+
 
         if ($proposal_id) {
             // Update existing proposal
@@ -109,7 +125,9 @@ $_SESSION['proposal']['step8_completed'] = true;
     <title>QalamiQuest - Research Proposal Step 8</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="proposal_style.css">
-    <style>  .references-container {
+
+</head>
+<style>  .references-container {
             background-color: #f8f9fa;
             padding: 25px;
             border-radius: 8px;
@@ -174,7 +192,6 @@ $_SESSION['proposal']['step8_completed'] = true;
             background-color: #0056b3;
         }
 </style>
-</head>
 
 <body>
     <div class="proposal-container">
@@ -243,18 +260,26 @@ $_SESSION['proposal']['step8_completed'] = true;
                     <?php echo $errors['references']; ?>
                 </div>
             <?php endif; ?>
-
             <div class="button-group">
-                <button type="submit" name="previous_step" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Previous Step
-                </button>
-                <button type="submit" class="btn btn-primary" name="submit" onclick="return confirmSubmission()">
-                    Submit <i class="fas fa-check"></i>
-                </button>
-                <button type="submit" name="save_and_quit" class="btn btn-secondary">
-                    <i class="fas fa-save"></i> Save and Quit
-                </button>
-            </div>
+    <button type="submit" name="previous_step" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Previous Step
+    </button>
+    <button type="submit" class="btn btn-primary" name="submit" onclick="return confirmSubmission()">
+        <?php
+        // Check if the proposal is submitted and needs re-submission
+        if (isset($_SESSION['proposal']['status']) && $_SESSION['proposal']['status'] == 3) {
+            echo "Re-submit <i class='fas fa-redo'></i>";
+        } else {
+            echo "Submit <i class='fas fa-check'></i>";
+        }
+        ?>
+    </button>
+    <button type="submit" name="save_and_quit" class="btn btn-secondary">
+        <i class="fas fa-save"></i> Save and Quit
+    </button>
+</div>
+
+           
         </form>
     </div>
 

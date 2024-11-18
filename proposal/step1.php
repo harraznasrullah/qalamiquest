@@ -47,15 +47,21 @@ if ($result->num_rows > 0) {
         'proposal_id' => $proposalId,
         'title' => $savedTitle,
         'introduction' => $savedIntro,
-        'problem_statement' => $savedProblem
+        'problem_statement' => $savedProblem,
+        'status' => $status
     ];
 
     // Check if proposal is already submitted or approved
-    if ($row['status'] > 0) {
-        $_SESSION['error_message'] = "Cannot edit proposal that has been submitted or approved.";
-        header('Location: ../student_dashboard.php');
-        exit();
-    }
+   // Allow editing only for proposals with status 0 (draft) or 3 (resubmission required)
+if ($row['status'] > 0 && $row['status'] != 3) {
+    $_SESSION['error_message'] = "Cannot edit proposal that has been submitted or approved.";
+    header('Location: ../student_dashboard.php');
+    exit();
+}
+
+// Set editability flag
+$isEditable = ($row['status'] == 0 || $row['status'] == 3);
+
 } else {
     // If proposal doesn't exist or doesn't belong to user
     $_SESSION['error_message'] = "Invalid proposal access.";
@@ -100,12 +106,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'problem_statement' => $problem_statement
         ];
 
-        $stmt = $conn->prepare("UPDATE proposals SET 
-            title = ?, 
-            introduction = ?, 
-            problem_statement = ?,
-            last_saved = NOW()
-            WHERE proposal_id = ? AND user_id = ? AND status = 0");
+        $stmt = $conn->prepare("
+    UPDATE proposals SET 
+        title = ?, 
+        introduction = ?, 
+        problem_statement = ?, 
+        last_saved = NOW()
+    WHERE proposal_id = ? 
+        AND user_id = ? 
+        AND (status = 0 OR status = 3)
+");
+
 
         $stmt->bind_param(
             "sssii",
@@ -136,6 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $savedTitle = $title;
     $savedIntro = $introduction;
     $savedProblem = $problem_statement;
+
 }
 ?>
 <!DOCTYPE html>
@@ -155,6 +167,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <h1>Research Proposal</h1>
             <p>Complete your proposal step by step</p>
         </div>
+        <?php if (!$isEditable): ?>
+    <p class="note">This proposal cannot be edited because it has been submitted or approved.</p>
+<?php endif; ?>
 
         <!-- Progress Bar -->
         <div class="progress-bar">
@@ -175,8 +190,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="form-group">
                     <label for="title">Main topic of your study</label>
                     <div class="input-wrapper">
-                        <input type="text" id="title" name="title" value="<?php echo htmlspecialchars($savedTitle); ?>"
-                            maxlength="200" required>
+                    <input type="text" id="title" name="title" value="<?php echo htmlspecialchars($savedTitle); ?>" 
+       maxlength="200" <?php echo !$isEditable ? 'readonly' : ''; ?> required>
+
                         <div class="char-counter"><span id="titleCount">0</span>/200</div>
                     </div>
                     <?php if (isset($errors['title'])): ?>
@@ -191,8 +207,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="form-group">
                     <label for="introduction">Brief overview of your study</label>
                     <div class="input-wrapper">
-                        <textarea id="introduction" name="introduction" rows="4" maxlength="1000"
-                            required><?php echo htmlspecialchars($savedIntro); ?></textarea>
+                    <textarea id="introduction" name="introduction" rows="4" maxlength="1000" 
+                    <?php echo !$isEditable ? 'readonly' : ''; ?> required><?php echo htmlspecialchars($savedIntro); ?></textarea>
                         <div class="char-counter"><span id="introCount">0</span>/1000</div>
                     </div>
                     <?php if (isset($errors['introduction'])): ?>
@@ -207,8 +223,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="form-group">
                     <label for="problem_statement">What issue or gap does your study address?</label>
                     <div class="input-wrapper">
-                        <textarea id="problem_statement" name="problem_statement" rows="4" maxlength="1000"
-                            required><?php echo htmlspecialchars($savedProblem); ?></textarea>
+                    <textarea id="problem_statement" name="problem_statement" rows="4" maxlength="1000" 
+                    <?php echo !$isEditable ? 'readonly' : ''; ?> required><?php echo htmlspecialchars($savedProblem); ?></textarea>
                         <div class="char-counter"><span id="problemCount">0</span>/1000</div>
                     </div>
                     <?php if (isset($errors['problem_statement'])): ?>

@@ -18,6 +18,7 @@ $offset = ($page - 1) * $limit;
 $search = isset($_GET['search']) ? $_GET['search'] : '';
 $status_filter = isset($_GET['status']) ? $_GET['status'] : '1';
 
+// Update the WHERE clause to use numeric status values
 $where_clause = "WHERE proposals.status = ?";
 if ($search) {
     $where_clause .= " AND (proposals.title LIKE ? OR users.fullname LIKE ?)";
@@ -55,23 +56,24 @@ $count_stmt->execute();
 $total_records = $count_stmt->get_result()->fetch_assoc()['count'];
 $total_pages = ceil($total_records / $limit);
 
-// Handle actions
+// Handle actions with numeric status values
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'];
     $proposal_id = $_POST['proposal_id'];
     $feedback = isset($_POST['feedback']) ? $_POST['feedback'] : '';
 
+    // Set numeric status values
     if ($action === 'approve') {
-        $status = 'approved';
+        $status = 2;  // Approved
     } elseif ($action === 'require_progress') {
-        $status = 'progress_required';
+        $status = 3;  // Progress Required
     } else {
         $status = null;
     }
 
     if ($status) {
         $stmt = $conn->prepare("UPDATE proposals SET status = ?, feedback = ? WHERE proposal_id = ?");
-        $stmt->bind_param("ssi", $status, $feedback, $proposal_id);
+        $stmt->bind_param("isi", $status, $feedback, $proposal_id);
         if ($stmt->execute()) {
             $_SESSION['success_message'] = "Proposal status updated successfully!";
             header("Location: approval.php");
@@ -81,6 +83,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
+
+// Update the status filter dropdown in HTML
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -109,8 +113,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="sidebar" id="sidebar">
         <a href="lecturer_dashboard.php"><i class="fas fa-home"></i> Dashboard</a>
         <a href="approval.php" class="active"><i class="fas fa-check-circle"></i> Approval</a>
-        <a href="edit_profile.php"><i class="fas fa-user"></i> Edit Profile</a>
-        <a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        <a href="../edit_profile.php"><i class="fas fa-user"></i> Edit Profile</a>
+        <a href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 
     <div class="main-content" id="main-content">
@@ -133,11 +137,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         value="<?php echo htmlspecialchars($search); ?>" onkeyup="handleSearch(this.value)">
                 </div>
                 <select class="btn" onchange="handleStatusFilter(this.value)">
-                    <option value="1" <?php echo $status_filter === '1' ? 'selected' : ''; ?>>Pending</option>
-                    <option value="approved" <?php echo $status_filter === 'approved' ? 'selected' : ''; ?>>Approved
-                    </option>
-                    <option value="progress_required" <?php echo $status_filter === 'progress_required' ? 'selected' : ''; ?>>Progress Required</option>
-                </select>
+    <option value="1" <?php echo $status_filter === '1' ? 'selected' : ''; ?>>Pending</option>
+    <option value="2" <?php echo $status_filter === '2' ? 'selected' : ''; ?>>Approved</option>
+    <option value="3" <?php echo $status_filter === '3' ? 'selected' : ''; ?>>Progress Required</option>
+</select>
             </div>
 
             <?php if ($result->num_rows > 0): ?>

@@ -88,7 +88,7 @@ $stmt->close();
                 <p>Connecting with others and exchanging ideas.</p>
             </div>
             <div class="service-box" onclick="window.location.href='student_dashboard.php?action=add_proposal'">
-            <i class="fas fa-edit"></i>
+                <i class="fas fa-edit"></i>
                 <h3>Add/Edit Proposal</h3>
                 <p>Guiding you to write a proper proposal.</p>
             </div>
@@ -108,22 +108,23 @@ $stmt->close();
                         <th>Name</th>
                         <th>Date Modified</th>
                         <th>Status</th>
+                        <th>Comments</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (empty($recentProposals)): ?>
                         <tr>
-                            <td>No recent activity</td>
-                            <td>-</td>
-                            <td>-</td>
+                            <td colspan="4">No recent activity</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($recentProposals as $proposal): ?>
                             <tr>
-                            <td><a href="proposal/step1.php?proposal_id=<?php echo $proposal['proposal_id']; ?>"><?php echo $proposal['title']; ?></a></td>
-                
-                                <td><?php echo date('d-m-Y', strtotime($proposal['last_saved'])) . ' | ' . date('h:i:s A', strtotime($proposal['last_saved'])); ?>
+                                <td>
+                                    <a href="proposal/step1.php?proposal_id=<?php echo $proposal['proposal_id']; ?>">
+                                        <?php echo $proposal['title']; ?>
+                                    </a>
                                 </td>
+                                <td><?php echo date('d-m-Y | h:i:s A', strtotime($proposal['last_saved'])); ?></td>
                                 <td>
                                     <?php
                                     switch ($proposal['status']) {
@@ -144,10 +145,20 @@ $stmt->close();
                                     }
                                     ?>
                                 </td>
+                                <td>
+                                    <!-- View Comments Button -->
+                                    <?php if ($proposal['status'] >= 0): ?>
+                                        <button
+                                            onclick="window.location.href='view_comments.php?proposal_id=<?php echo $proposal['proposal_id']; ?>'">
+                                            View
+                                        </button>
+                                    <?php endif; ?>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     <?php endif; ?>
                 </tbody>
+
             </table>
         </div>
     </div>

@@ -57,9 +57,11 @@ $result = $stmt->get_result();
         }
 
         body {
-            background-color: #f5f5f5;
+            background: linear-gradient(to bottom, #ffffff, #EDFFFF);
             padding: 2rem;
             color: #333;
+           
+    min-height: 100vh;
         }
 
         h1 {
