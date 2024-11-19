@@ -11,7 +11,23 @@ $query = "SELECT COUNT(*) as request_count FROM supervisors WHERE status = 'pend
 $result = $conn->query($query);
 $row = $result->fetch_assoc();
 $pending_requests = $row['request_count'];
+
+$query = "SELECT COUNT(*) as status_count FROM proposals WHERE status = 1";
+$result = $conn->query($query);
+$row = $result->fetch_assoc();
+$pending_status = $row['status_count'];
+
+// Modified query to fetch proposals based on approval_date
+$query = "SELECT p.proposal_id, p.title, p.approval_date, p.status, u.fullname AS student_name
+          FROM proposals p
+          JOIN users u ON p.user_id = u.id 
+          WHERE p.approval_date IS NOT NULL 
+          AND u.title = 'student'
+          ORDER BY p.approval_date DESC"; // Added ORDER BY to show most recent first
+$result = $conn->query($query);
 ?>
+
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -40,7 +56,7 @@ $pending_requests = $row['request_count'];
         }
 
         .-top-2 {
-            top: -0.5rem;
+            top: 0.5rem;
         }
 
         .-right-2 {
@@ -87,20 +103,39 @@ $pending_requests = $row['request_count'];
         /* Additional styles for notification badge */
         .notification-badge {
             position: absolute;
-            top: -8px;
-            right: -8px;
+            top: -10px;
+            right: -10px;
             background-color: #ef4444;
             color: white;
             border-radius: 50%;
             padding: 2px 6px;
             font-size: 12px;
             min-width: 20px;
-            height: 20px;
+            height: 25px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-view {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .btn-view:hover {
+            background-color: #0056b3;
+        }
+
+        .btn-view i {
+            margin-right: 5px;
         }
     </style>
 </head>
@@ -135,15 +170,20 @@ $pending_requests = $row['request_count'];
                 <i class="fas fa-clipboard-list"></i> OVERVIEW
             </div>
             <div class="overview-controls">
-                <button class="approval-btn" onclick="window.location.href='approval.php'">
+                <button class="approval-btn relative" onclick="window.location.href='approval.php'">
                     Approval
+                    <?php if ($pending_status > 0): ?>
+                        <div class="notification-badge">
+                            <?php echo $pending_status; ?>
+                        </div>
+                    <?php endif; ?>
                 </button>
                 <button class="approval-btn relative" onclick="window.location.href='approve_sv.php'">
                     Supervisor Request
                     <?php if ($pending_requests > 0): ?>
-                    <div class="notification-badge">
-                        <?php echo $pending_requests; ?>
-                    </div>
+                        <div class="notification-badge">
+                            <?php echo $pending_requests; ?>
+                        </div>
                     <?php endif; ?>
                 </button>
             </div>
@@ -159,31 +199,45 @@ $pending_requests = $row['request_count'];
                         <th>Student</th>
                         <th>Approval Date</th>
                         <th>Status</th>
+                        <th>Action</th>
+
+
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>1</td>
-                        <td>The Impact of Islamic Teachings on Environmental Sustainability</td>
-                        <td>Kamarul bin Rahim</td>
-                        <td>3/7/2023</td>
-                        <td class="status-approved">Approved</td>
-                    </tr>
-                    <tr>
-                        <td>2</td>
-                        <td>Nurturing Taqwa in Modern Society</td>
-                        <td>Rahimah binti Azman</td>
-                        <td>7/9/2023</td>
-                        <td class="status-rejected">Rejected</td>
-                    </tr>
-                    <tr>
-                        <td>3</td>
-                        <td>Revitalizing Traditional Islamic Arts</td>
-                        <td>Andre Alaba</td>
-                        <td>4/10/2023</td>
-                        <td class="status-approved">Approved</td>
-                    </tr>
+                    <?php
+                    if ($result->num_rows > 0) {
+                        $no = 1;
+                        while ($row = $result->fetch_assoc()) {
+                            // Map status codes to human-readable text
+                            $status_text = $row['status'] == 2 ? 'Approved' : 'Required Progress';
+                            ?>
+                            <tr>
+                                <td><?php echo $no++; ?></td>
+                                <td><?php echo htmlspecialchars(ucwords(strtolower($row['title']))); ?></td>
+                                <td><?php echo htmlspecialchars(ucwords(strtolower($row['student_name']))); ?></td>
+                                <td><?php echo date('d-m-Y | h:i A', strtotime($row['approval_date'])); ?></td>
+                                <td><?php echo $status_text; ?></td>
+                                <td>
+                                    <button type="button" onclick="viewProposal(<?php echo $row['proposal_id']; ?>)"
+                                        class="btn-view">
+                                        <i class="fas fa-eye"></i> View
+                                    </button>
+                                </td>
+                            </tr>
+                            <?php
+                        }
+                    } else {
+                        ?>
+                        <tr>
+                            <td colspan="6">No proposals found.</td>
+                        </tr>
+                        <?php
+                    }
+                    ?>
                 </tbody>
+            </table>
+
             </table>
         </div>
     </div>
@@ -201,6 +255,9 @@ $pending_requests = $row['request_count'];
                 sidebar.style.left = "0";
                 mainContent.style.marginLeft = "250px";
             }
+        }
+        function viewProposal(proposalId) {
+            window.location.href = `../view_comment.php?proposal_id=${proposalId}`;
         }
     </script>
 

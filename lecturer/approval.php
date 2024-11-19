@@ -72,8 +72,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($status) {
-        $stmt = $conn->prepare("UPDATE proposals SET status = ?, feedback = ? WHERE proposal_id = ?");
+        // Update the SQL query to include approval_date
+        $stmt = $conn->prepare("UPDATE proposals SET status = ?, feedback = ?, approval_date = CURRENT_TIMESTAMP WHERE proposal_id = ?");
         $stmt->bind_param("isi", $status, $feedback, $proposal_id);
+        
         if ($stmt->execute()) {
             $_SESSION['success_message'] = "Proposal status updated successfully!";
             header("Location: approval.php");
