@@ -248,10 +248,7 @@ $redirect_url = "approval.php"; // Define the redirect URL
                         <ul class="reference-list">
                             <?php foreach ($references as $reference): ?>
                                 <li>
-                                    <a href="<?php echo htmlspecialchars($reference); ?>" target="_blank">
-                                        <i class="fas fa-external-link-alt"></i>
-                                        <?php echo htmlspecialchars($reference); ?>
-                                    </a>
+                                <?php echo htmlspecialchars($reference); ?>
                                 </li>
                             <?php endforeach; ?>
                         </ul>
