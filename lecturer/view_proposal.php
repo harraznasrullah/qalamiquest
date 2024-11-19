@@ -51,6 +51,7 @@ $research_questions = json_decode($proposal['research_questions'], true);
 $interview_questions = json_decode($proposal['interview_questions'], true);
 $methodologies = json_decode($proposal['methodologies'], true);
 $references = json_decode($proposal['reference'], true);
+$redirect_url = "approval.php"; // Define the redirect URL
 ?>
 
 <!DOCTYPE html>
@@ -98,6 +99,7 @@ $references = json_decode($proposal['reference'], true);
 
             <form method="POST" action="submit_comment.php">
                 <input type="hidden" name="proposal_id" value="<?php echo $proposal_id; ?>">
+                <input type="hidden" name="redirect_url" value="<?php echo htmlspecialchars($redirect_url); ?>">
 
                 <!-- Introduction Section -->
                 <div class="section">
