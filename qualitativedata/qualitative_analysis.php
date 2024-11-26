@@ -44,6 +44,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['submission'])) {
 
     // Handle file upload
     $uploadDir = 'uploads/qualitative_analysis/';
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0755, true); // Create the directory if it doesn't exist
+    }
     $fileExtension = pathinfo($_FILES['submission']['name'], PATHINFO_EXTENSION);
     $fileName = uniqid() . '.' . $fileExtension;
     $targetPath = $uploadDir . $fileName;
@@ -61,6 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['submission'])) {
     header("Location: " . $_SERVER['PHP_SELF']);
     exit;
 }
+
 
 // Handle template download
 if (isset($_GET['download'])) {
@@ -97,7 +101,7 @@ while ($row = $result->fetch_assoc()) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QalamiQuest - Qualitative Data Analysis</title>
-    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="qastyles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
