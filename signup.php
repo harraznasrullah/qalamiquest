@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if ($title === 'student') {
             header("Location: student_dashboard.php");
         } elseif ($title === 'lecturer') {
-            header("Location: lecturer_dashboard.php");
+            header("Location: lecturer/lecturer_dashboard.php");
         }
         exit();
     } else {
