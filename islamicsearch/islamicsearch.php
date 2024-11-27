@@ -236,6 +236,39 @@ $conn->close();
 
         // Initial update on page load
         updateKeywordCount();
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const bookmarkButtons = document.querySelectorAll('.bookmark-btn');
+            bookmarkButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const surah = this.dataset.surah;
+                    const ayat = this.dataset.ayat;
+                    const text = this.dataset.text;
+                    const translation = this.dataset.translation;
+                    
+                    // Make an AJAX request to save the bookmark
+                    fetch('save_bookmark.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ surah, ayat, text, translation }),
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Bookmark saved successfully!');
+                        } else {
+                            alert('Failed to save bookmark. Please try again.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred while saving the bookmark.');
+                    });
+                });
+            });
+        });
     </script>
 </body>
 </html>
