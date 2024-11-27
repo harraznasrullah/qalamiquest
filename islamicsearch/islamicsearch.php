@@ -156,7 +156,7 @@ $conn->close();
                 <button type="submit">Search</button>
             </div>
         </form>
-
+        
         <div class="results">
             <?php if (!empty($results)): ?>
                 <?php foreach ($results as $result): ?>
@@ -164,6 +164,7 @@ $conn->close();
                         <strong>Surah <?php echo $result['surah']; ?>, Ayat <?php echo $result['ayat']; ?></strong>
                         <div class="arabic-text"><?php echo $result['text']; ?></div>
                         <div class="translation"><?php echo $result['highlighted_translation']; ?></div>
+                        <button class="bookmark-btn" data-surah="<?php echo $result['surah']; ?>" data-ayat="<?php echo $result['ayat']; ?>" data-text="<?php echo htmlspecialchars($result['text']); ?>" data-translation="<?php echo htmlspecialchars($result['english_translation']); ?>">Bookmark</button>
                     </div>
                 <?php endforeach; ?>
                 
