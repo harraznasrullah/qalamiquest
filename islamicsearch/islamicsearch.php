@@ -112,7 +112,7 @@ $conn->close();
     <div class="sidebar" id="sidebar">
         <a href="/../student_dashboard.php"><i class="fas fa-home"></i> Dashboard</a>
         <a href="#"><i class="fas fa-users"></i> Lecturer/Supervisor</a>
-        <a href="#"><i class="fas fa-bookmark"></i> Bookmark</a>
+        <a href="../bookmark/bookmarks.php"><i class="fas fa-bookmark"></i> Bookmark</a>
         <a href="edit_profile.php"><i class="fas fa-user"></i> Edit Profile</a>
         <a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a> <!-- Updated Logout link -->
     </div>
@@ -247,7 +247,7 @@ $conn->close();
                     const translation = this.dataset.translation;
                     
                     // Make an AJAX request to save the bookmark
-                    fetch('save_bookmark.php', {
+                    fetch('bookmark/bookmarks.php', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',

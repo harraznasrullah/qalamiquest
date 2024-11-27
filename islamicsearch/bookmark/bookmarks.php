@@ -23,8 +23,15 @@ while ($row = $result->fetch_assoc()) {
     $bookmarks[] = $row;
 }
 
+
+
 $stmt->close();
 $conn->close();
+
+// Remove any HTML output before this
+header('Content-Type: application/json');
+echo json_encode($response);
+exit();
 ?>
 
 <!DOCTYPE html>
@@ -37,7 +44,8 @@ $conn->close();
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <style>
         .container {
-            margin-left: 240px; /* Adjust this value based on the width of your sidebar */
+            max-width: 800px;
+            margin: 0 auto;
             padding: 20px;
         }
         .ayat {
@@ -45,14 +53,20 @@ $conn->close();
             padding: 10px;
             background-color: #f5f5f5;
             border-radius: 5px;
+            text-align: center;
         }
         .arabic-text {
             font-size: 24px;
-            text-align: right;
             margin-bottom: 10px;
         }
         .translation {
             font-size: 16px;
+        }
+        h1 {
+            text-align: center;
+        }
+        p {
+            text-align: center;
         }
     </style>
 </head>
