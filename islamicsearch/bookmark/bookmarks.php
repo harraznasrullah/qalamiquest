@@ -34,9 +34,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         // Insert new bookmark
-        $query = "INSERT INTO bookmarks (user_id, surah, ayat, text, translation) VALUES (?, ?, ?, ?, ?)";
+        $query = "INSERT INTO bookmarks (user_id, surah, ayat, text, english_translation) VALUES (?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($query);
-        $stmt->bind_param('iiiss', $user_id, $surah, $ayat, $text, $translation);
+        $stmt->bind_param('iisss', $user_id, $surah, $ayat, $text, $translation);
         
         if ($stmt->execute()) {
             echo json_encode(['success' => true, 'message' => 'Bookmark saved successfully']);
