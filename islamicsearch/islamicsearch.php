@@ -112,7 +112,7 @@ $conn->close();
     <div class="sidebar" id="sidebar">
         <a href="/../student_dashboard.php"><i class="fas fa-home"></i> Dashboard</a>
         <a href="#"><i class="fas fa-users"></i> Lecturer/Supervisor</a>
-        <a href="../bookmark/bookmarks.php"><i class="fas fa-bookmark"></i> Bookmark</a>
+        <a href="./bookmark/view_bookmarks.php"><i class="fas fa-bookmark"></i> Bookmark</a>
         <a href="edit_profile.php"><i class="fas fa-user"></i> Edit Profile</a>
         <a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a> <!-- Updated Logout link -->
     </div>
@@ -237,35 +237,50 @@ $conn->close();
         // Initial update on page load
         updateKeywordCount();
 
+        // Update this part in your JavaScript code
         document.addEventListener('DOMContentLoaded', function() {
             const bookmarkButtons = document.querySelectorAll('.bookmark-btn');
             bookmarkButtons.forEach(button => {
-                button.addEventListener('click', function() {
+                button.addEventListener('click', async function() {
                     const surah = this.dataset.surah;
                     const ayat = this.dataset.ayat;
                     const text = this.dataset.text;
                     const translation = this.dataset.translation;
                     
-                    // Make an AJAX request to save the bookmark
-                    fetch('bookmark/bookmarks.php', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ surah, ayat, text, translation }),
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            alert('Bookmark saved successfully!');
-                        } else {
-                            alert('Failed to save bookmark. Please try again.');
+                    try {
+                        const formData = new FormData();
+                        formData.append('surah', surah);
+                        formData.append('ayat', ayat);
+                        formData.append('text', text);
+                        formData.append('translation', translation);
+                        
+                        const response = await fetch('./bookmark/bookmarks.php', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        console.log('Response status:', response.status);
+                        console.log('Response headers:', response.headers);
+                        
+                        const responseText = await response.text(); // First, get raw text
+                        console.log('Raw response:', responseText);
+                        
+                        try {
+                            const data = JSON.parse(responseText); // Then try to parse
+                            if (data.success) {
+                                alert('Bookmark saved successfully!');
+                            } else {
+                                alert(data.message || 'Failed to save bookmark');
+                            }
+                        } catch (parseError) {
+                            console.error('JSON Parse Error:', parseError);
+                            console.error('Unparseable response:', responseText);
+                            alert('Server returned an invalid response');
                         }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        alert('An error occurred while saving the bookmark.');
-                    });
+                    } catch (error) {
+                        console.error('Fetch Error:', error);
+                        alert('An error occurred while saving the bookmark');
+                    }
                 });
             });
         });
