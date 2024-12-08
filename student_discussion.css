@@ -1,0 +1,210 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap');
+
+body {
+    font-family: 'Montserrat', sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background: linear-gradient(to bottom, #ffffff, #EDFFFF);
+    /* Background gradient */
+}
+
+/* Navbar styling */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #00b8a9;
+    /* Green navbar background */
+    padding: 10px 20px;
+    height: 60px;
+    position: sticky;
+    top: 0;
+    /* Stick navbar to top */
+    z-index: 1000;
+    /* Ensures navbar stays above other content */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    /* Adds shadow to navbar */
+}
+
+/* Navbar left section styling (logo/title) */
+.navbar-left {
+    color: white;
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+/* Navbar right section (buttons) */
+.navbar-right {
+    display: flex;
+}
+
+/* Styling for buttons in navbar */
+.navbar-right button {
+    background-color: #00b8a9;
+    /* Button color matching navbar */
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    margin-left: 15px;
+    cursor: pointer;
+    font-size: 16px;
+    border-radius: 25px;
+    /* Rounded button edges */
+    transition: background 0.3s ease, transform 0.3s ease;
+    /* Transition on hover */
+}
+
+/* Hover effect for navbar buttons */
+.navbar-right button:hover {
+    background: #004d4d;
+    /* Darker shade of green on hover */
+    transform: scale(1.05);   
+    /* Slight enlargement on hover */
+}
+
+.navbar-right i {
+    font-size: 24px;
+    margin-left: 20px;
+    cursor: pointer;
+    color: white;
+}
+
+.navbar-right span {
+    margin-left: 10px;
+    font-size: 18px;
+    color: white;
+}
+
+/* Main content when sidebar is open */
+#main-content {
+    transition: margin-left 0.3s;
+    padding: 16px;
+    margin-left: 0;
+    /* Default margin */
+}
+
+.sidebar {
+    height: calc(100% - 50px);
+    /* Adjust height for the navbar (assuming navbar height is 50px) */
+    width: 240px;
+    position: fixed;
+    top: 50px;
+    /* Start just below the navbar */
+    left: -300px;
+    /* Hidden by default */
+    background-color: #f9f9f9;
+    /* Slight transparency */
+    border: 1px solid #ddd;
+    /* Add a border color and thickness */
+    overflow-x: hidden;
+    transition: 0.3s;
+    padding-top: 40px;
+    /* Top padding */
+    z-index: 1;
+    /* Ensure it is above the main content */
+}
+
+.sidebar a {
+    padding: 15px;
+    text-decoration: none;
+    font-size: 16px;
+    color: #818181;
+    display: block;
+    transition: 0.3s;
+}
+
+.sidebar a i {
+    margin-right: 10px;
+    /* Adjust the value as needed for right padding */
+    vertical-align: middle;
+    /* Align the icon vertically with text */
+    width: 30px;
+    text-align: center;
+
+}
+
+.sidebar a:hover {
+    color: black;
+}
+
+/* Open button in the navbar */
+.open-btn {
+    font-size: 24px;
+    cursor: pointer;
+    background-color: transparent;
+    border: none;
+    color: white;
+    padding: 10px;
+}
+
+h1 {
+    text-align: center;
+    color: #2c3e50;
+    border-bottom: 3px solid #3498db;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.create-topic-btn {
+    display: inline-block;
+    background-color: #2ecc71;
+    color: white;
+    padding: 10px 15px;
+    text-decoration: none;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    transition: background-color 0.3s ease;
+}
+
+.create-topic-btn:hover {
+    background-color: #27ae60;
+}
+
+.topic-container {
+    background-color: white;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease;
+}
+
+.topic-container:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.topic-title {
+    margin-bottom: 10px;
+}
+
+.topic-title a {
+    color: #2980b9;
+    text-decoration: none;
+    font-size: 1.2em;
+    transition: color 0.3s ease;
+}
+
+.topic-title a:hover {
+    color: #3498db;
+    text-decoration: underline;
+}
+
+.topic-description {
+    color: #7f8c8d;
+    margin-bottom: 10px;
+}
+
+.topic-meta {
+    font-size: 0.8em;
+    color: #95a5a6;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid #ecf0f1;
+    margin: 15px 0;
+}

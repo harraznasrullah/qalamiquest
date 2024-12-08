@@ -82,7 +82,7 @@ $stmt->close();
                 <h3>Islamic Explorer</h3>
                 <p>Providing verified resources from Quran, Hadith and Islamic Scholar.</p>
             </div>
-            <div class="service-box">
+            <div class="service-box" onclick="window.location.href='student_discussion.php'">
                 <i class="fas fa-comments"></i>
                 <h3>Student Lounge</h3>
                 <p>Connecting with others and exchanging ideas.</p>
