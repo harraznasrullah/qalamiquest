@@ -91,30 +91,30 @@ $conn->close();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Islamic Explorer</title>
-    <link rel="stylesheet" href="../islamicsearch/islamicsearchstyles.css">
+    <link rel="stylesheet" href="islamicsearchstyles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
 </head>
 <body>
 
-    <!-- Navbar -->
-    <div class="navbar">
+   <!-- Navbar -->
+   <div class="navbar">
         <div class="navbar-left">
             <button class="open-btn" onclick="toggleSidebar()">☰</button> <!-- Sidebar toggle button -->
             QalamiQuest
         </div>
         <div class="navbar-right">
             <i class="fas fa-bell bell-icon"></i> <!-- Bell icon -->
-            <span><?php echo $user_name; ?></span> <!-- Display logged in user's name -->
+            <span><?php echo strtoupper($_SESSION['user_name']); ?></span> <!-- Display logged in user's name -->
             <i class="fas fa-user"></i> <!-- Profile icon -->
         </div>
     </div>
 
-    <div class="sidebar" id="sidebar">
-        <a href="/../student_dashboard.php"><i class="fas fa-home"></i> Dashboard</a>
-        <a href="#"><i class="fas fa-users"></i> Lecturer/Supervisor</a>
-        <a href="./bookmark/view_bookmarks.php"><i class="fas fa-bookmark"></i> Bookmark</a>
-        <a href="edit_profile.php"><i class="fas fa-user"></i> Edit Profile</a>
-        <a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a> <!-- Updated Logout link -->
+     <!-- Sidebar -->
+     <div class="sidebar" id="sidebar">
+        <a href="../student_dashboard.php"><i class="fas fa-home"></i> Dashboard</a>
+        <a href="#"><i class="fas fa-bookmark"></i> Bookmark</a>
+        <a href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 
         <!-- JavaScript to toggle sidebar -->
@@ -133,7 +133,7 @@ $conn->close();
             }
         }
         </script>
-
+<div id="main-content">
     <div class="container">
         <h1>ISLAMIC EXPLORER</h1>
         <p>Search for keywords in the Quran<br>(Maximum 5 keywords, separate with commas)</p>
@@ -153,7 +153,7 @@ $conn->close();
                 <?php if (isset($error)): ?>
                     <div class="error-message"><?php echo $error; ?></div>
                 <?php endif; ?>
-                <button type="submit">Search</button>
+                <button class="search" type="submit">Search</button>
             </div>
         </form>
         
@@ -190,6 +190,7 @@ $conn->close();
                 <p>No results found.</p>
             <?php endif; ?>
         </div>
+    </div>
     </div>
 
     <script>
