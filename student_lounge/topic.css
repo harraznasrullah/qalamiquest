@@ -1,0 +1,304 @@
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background: linear-gradient(to bottom, #ffffff, #EDFFFF);
+    line-height: 1.6;
+    color: #1a1a1b;
+    min-height: 100vh;
+
+}
+
+/* Topic Container Styling */
+.topic-container {
+    background-color: white;
+    border-radius: 12px;
+    border: none;
+    margin-bottom: 25px;
+    padding: 25px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.07);
+    transition: box-shadow 0.3s ease;
+}
+
+.topic-container:hover {
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Topic Header Styling */
+.topic-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.back-button {
+    text-decoration: none;
+    color: #2c3e50;
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    transition: color 0.3s ease;
+    padding: 8px;
+    border-radius: 50%;
+}
+
+.back-button:hover {
+    color: #3498db;
+    background-color: #f0f0f0;
+}
+
+.topic-title {
+    font-size: 1.8em;
+    font-weight: 700;
+    color: #2c3e50;
+    line-height: 1.2;
+    flex-grow: 1;
+}
+
+/* Topic Meta Styling */
+.topic-meta {
+    display: flex;
+align-items: center;
+color: #787c7e;
+font-size: 0.9em;
+margin-bottom: 15px;
+}
+
+.topic-description {
+    color: #34495e;
+    margin-bottom: 20px;
+    line-height: 1.6;
+    font-size: 1em;
+    max-height: 300px;
+    overflow-y: auto;
+    background-color: #f4f6f8;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #3498db;
+    scrollbar-width: thin;
+    scrollbar-color: #b0b0b0 #f1f1f1;
+}
+
+.topic-description::-webkit-scrollbar {
+    width: 8px;
+}
+
+.topic-description::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.topic-description::-webkit-scrollbar-thumb {
+    background: #b0b0b0;
+    border-radius: 10px;
+}
+
+.topic-description::-webkit-scrollbar-thumb:hover {
+    background: #888;
+}
+
+/* Rest of the previous CSS remains the same */
+.comment {
+    display: flex;
+    margin-bottom: 15px;
+    padding: 15px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.3s ease;
+}
+
+.comment:hover {
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.08);
+}
+
+.comment-content {
+    flex-grow: 1;
+    width: 100%;
+}
+
+.comment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 8px;
+}
+
+.comment-author {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 0.95em;
+}
+
+.comment-timestamp {
+    color: #7f8c8d;
+    font-size: 0.8em;
+}
+
+.comment-text {
+    margin-bottom: 12px;
+    color: #34495e;
+    line-height: 1.5;
+    font-size: 0.95em;
+}
+
+.comment-actions {
+    display: flex;
+    align-items: center;
+    color: #95a5a6;
+    font-size: 0.85em;
+}
+
+.reply-form {
+    background-color: #f9f9f9;
+    border: 1px solid #e6e6e6;
+    border-radius: 6px;
+    padding: 15px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    animation: fadeIn 0.3s ease;
+}
+
+.reply-form textarea {
+    width: 100%;
+    min-height: 80px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 10px;
+    resize: vertical;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+    font-size: 0.95em;
+}
+
+.reply-form textarea:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.reply-form button {
+    background-color: #0079d3;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.3s ease;
+}
+
+.reply-form button:hover {
+    background-color: #005cbf;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.reply-button {
+    background: none;
+    border: none;
+    color: #3498db;
+    cursor: pointer;
+    font-weight: 500;
+    margin-right: 10px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.reply-button:hover {
+    background-color: #f0f0f0;
+}
+
+.reply-count {
+    color: #3498db;
+    cursor: pointer;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 12px;
+    background-color: #e8f4f8;
+}
+
+.reply-count:hover {
+    background-color: #d6eaf8;
+}
+
+.nested-comments {
+    margin-left: 20px;
+    border-left: 3px solid #e6e6e6;
+    padding-left: 15px;
+    display: none;
+}
+
+.nested-comments.show {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.comment-form {
+    background-color: white;
+    border: 1px solid #e6e6e6;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    box-sizing: border-box; /* Ensures padding is included in width calculation */
+}
+
+.comment-form textarea {
+    width: 100%; /* Ensure full width within the form */
+    min-height: 100px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 10px;
+    resize: vertical;
+    margin-bottom: 10px;
+    box-sizing: border-box; /* Includes padding and border in the element's total width */
+    font-size: 0.95em;
+    max-width: 100%; /* Prevent horizontal overflow */
+}
+
+.comment-form textarea:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.comment-form button {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 12px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.3s ease;
+}
+
+.comment-form button:hover {
+    background-color: #2980b9;
+}

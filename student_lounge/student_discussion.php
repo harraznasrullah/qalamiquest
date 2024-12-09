@@ -1,6 +1,6 @@
 <?php 
 session_start(); 
-require 'db_connection.php';  
+require '../db_connection.php';  
 
 // Fetch all topics with user names
 $result = $conn->query("
