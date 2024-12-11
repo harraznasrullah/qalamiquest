@@ -113,7 +113,7 @@ $conn->close();
      <!-- Sidebar -->
      <div class="sidebar" id="sidebar">
         <a href="../student_dashboard.php"><i class="fas fa-home"></i> Dashboard</a>
-        <a href="#"><i class="fas fa-bookmark"></i> Bookmark</a>
+        <a href="../islamicsearch/bookmark/view_bookmarks.php"><i class="fas fa-bookmark"></i> Bookmark</a>
         <a href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 
