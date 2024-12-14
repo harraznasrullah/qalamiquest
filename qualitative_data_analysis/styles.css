@@ -1,0 +1,291 @@
+        /* Modern, clean color palette */
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --background-color: #f4f6f7;
+            --card-background: #ffffff;
+            --text-color: #2c3e50;
+            --border-color: #ecf0f1;
+            --hover-color: #2980b9;
+            --success-color: #2ecc71;
+            --error-color: #e74c3c;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+            background-color: var(--card-background);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+        }
+
+        .sections {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .section-card {
+            background-color: var(--card-background);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .section-card h3 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+
+        /* Horizontal Layout for Buttons */
+        .section-card form {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .btn-actions-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .btn-actions-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-left: auto;
+            /* Pushes the right-side buttons to the right */
+        }
+
+        .btn-primary,
+        .attach-label,
+        .submit-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 15px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            height: 40px;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--hover-color);
+        }
+
+        .attach-label {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .attach-label:hover {
+            background-color: #27ae60;
+        }
+
+        .submit-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+        }
+
+        .submit-btn:hover {
+            background-color: var(--hover-color);
+        }
+
+        .submit-btn[disabled] {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        /* Responsive Design */
+        @media screen and (max-width: 600px) {
+            .container {
+                padding: 1rem;
+                width: 95%;
+            }
+
+            .btn-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .section-card form {
+                display: flex;
+                align-items: center;
+                width: 100%;
+            }
+
+            .btn-primary,
+            .attach-label,
+            .submit-btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                padding: 10px 15px;
+                border-radius: 6px;
+                text-decoration: none;
+                font-weight: 600;
+                transition: all 0.3s ease;
+                cursor: pointer;
+                height: 40px;
+                white-space: nowrap;
+            }
+        }
+
+        /* Optional: Add some subtle animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .section-card {
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        /* Upload Status Message Styles */
+        .upload-status {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 15px 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            font-weight: 600;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            opacity: 0;
+            animation: slideIn 0.5s ease forwards, fadeOut 3s 4s forwards;
+        }
+
+        .upload-status-success {
+            background-color: #2ecc71;
+            color: white;
+            border: 2px solid #27ae60;
+        }
+
+        .upload-status-error {
+            background-color: #e74c3c;
+            color: white;
+            border: 2px solid #c0392b;
+        }
+
+        @keyframes slideIn {
+            from {
+                top: -50px;
+                opacity: 0;
+            }
+
+            to {
+                top: 20px;
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0;
+                visibility: hidden;
+            }
+        }
+
+        /* Page Header Styles */
+        .page-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            position: relative;
+            text-align: center;
+        }
+
+        .btn-back {
+            position: absolute;
+            left: 0;
+            display: inline-flex;
+            align-items: center;
+            text-decoration: none;
+            color: var(--text-color);
+            font-weight: 500;
+            padding: 8px 15px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-back svg {
+            margin-right: 8px;
+        }
+
+        .btn-back:hover {
+            background-color: var(--background-color);
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .page-header h1 {
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }

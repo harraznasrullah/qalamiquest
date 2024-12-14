@@ -167,9 +167,12 @@ $result = $conn->query($query);
         <!-- Overview Section -->
         <div class="overview-section">
             <div class="overview-title">
-                <i class="fas fa-clipboard-list"></i> OVERVIEW
+                <i class="fas fa-clipboard-list"></i> PROPOSAL'S OVERVIEW
             </div>
             <div class="overview-controls">
+            <button class="approval-btn relative" onclick="window.location.href='view_qualitative_data_analysis.php'">
+                    Other Submission
+                </button>
                 <button class="approval-btn relative" onclick="window.location.href='approval.php'">
                     Approval
                     <?php if ($pending_status > 0): ?>

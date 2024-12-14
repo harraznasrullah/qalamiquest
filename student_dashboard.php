@@ -92,7 +92,7 @@ $stmt->close();
                 <h3>Add/Edit Proposal</h3>
                 <p>Guiding you to write a proper proposal.</p>
             </div>
-            <div class="service-box" onclick="window.location.href='qualitativedata/qualitative_analysis.php'">
+            <div class="service-box" onclick="window.location.href='qualitative_data_analysis/qualitative_data_analysis.php'">
                 <i class="fas fa-chart-line"></i>
                 <h3>Qualitative Data Analysis</h3>
                 <p>Proceeding your qualitative research here in an easier way.</p>

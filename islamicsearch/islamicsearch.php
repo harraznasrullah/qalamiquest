@@ -113,7 +113,7 @@ $conn->close();
      <!-- Sidebar -->
      <div class="sidebar" id="sidebar">
         <a href="../student_dashboard.php"><i class="fas fa-home"></i> Dashboard</a>
-        <a href="#"><i class="fas fa-bookmark"></i> Bookmark</a>
+        <a href="bookmark/view_bookmarks.php"><i class="fas fa-bookmark"></i> Bookmark</a>
         <a href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 
@@ -156,6 +156,14 @@ $conn->close();
                 <button class="search" type="submit">Search</button>
             </div>
         </form>
+
+        <div class="upload-container">
+    <p>Upload a file to find related Quranic Ayats:</p>
+    <form action="suggest_ayat.php" method="POST" enctype="multipart/form-data">
+        <input type="file" name="uploaded_file" required>
+        <button type="submit" class="btn-upload">Upload & Analyze</button>
+    </form>
+</div>
         
         <div class="results">
             <?php if (!empty($results)): ?>
