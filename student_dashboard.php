@@ -69,7 +69,7 @@ $stmt->close();
     <div class="sidebar" id="sidebar">
         <a href="student_dashboard.php"><i class="fas fa-home"></i> Dashboard</a>
         <a href="assign_sv.php"><i class="fas fa-users"></i> Apply Supervisor</a>
-        <a href="#"><i class="fas fa-bookmark"></i> Bookmark</a>
+        <a href="../islamicsearch/bookmark/view_bookmarks.php"><i class="fas fa-bookmark"></i> Bookmark</a>
         <a href="edit_profile.php"><i class="fas fa-user"></i> Edit Profile</a>
         <a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
