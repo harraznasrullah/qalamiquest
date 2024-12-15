@@ -3,6 +3,7 @@ session_start();
 include(__DIR__ . '/../db_connection.php');
 
 $keywords = '';
+$fileKeywords = '';
 $results = [];
 $resultsPerPage = 5;
 $currentPage = isset($_GET['page']) ? (int)$_GET['page'] : 1;
@@ -11,12 +12,25 @@ $totalResults = 0;
 
 $user_name = strtoupper($_SESSION['user_name']); // Retrieve from session after login
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST' || (isset($_GET['keywords']) && !empty($_GET['keywords']))) {
-    $keywords = $_SERVER['REQUEST_METHOD'] == 'POST' ? $_POST['keywords'] : $_GET['keywords'];
-    // Split keywords by comma and trim whitespace
-    $keywordsArray = array_map('trim', explode(',', $keywords));
-    // Remove empty elements
-    $keywordsArray = array_filter($keywordsArray);
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    // Handle keywords from input
+    if (!empty($_POST['keywords'])) {
+        $keywords = $_POST['keywords'];
+    }
+
+    // Handle file upload
+    if (isset($_FILES['keywords_file']) && $_FILES['keywords_file']['error'] === UPLOAD_ERR_OK) {
+        $fileTmpPath = $_FILES['keywords_file']['tmp_name'];
+        $fileContent = file_get_contents($fileTmpPath);
+
+        // Extract keywords from file
+        $fileKeywords = extractKeywordsFromFile($fileContent); // Use helper function
+    }
+
+    // Combine keywords from input and file
+    $allKeywords = $keywords . ',' . $fileKeywords;
+    $keywordsArray = array_map('trim', explode(',', $allKeywords));
+    $keywordsArray = array_filter($keywordsArray); // Remove empty elements
 
     if (count($keywordsArray) > 5) {
         $error = "Please enter up to 5 keywords only.";
@@ -45,9 +59,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' || (isset($_GET['keywords']) && !empty(
 
             // Main query with pagination
             $query = "SELECT surah, ayat, text, english_translation 
-                     FROM quran 
-                     WHERE " . implode(" OR ", $conditions) . "
-                     LIMIT ? OFFSET ?";
+                      FROM quran 
+                      WHERE " . implode(" OR ", $conditions) . "
+                      LIMIT ? OFFSET ?";
             
             $stmt = $conn->prepare($query);
             
@@ -83,6 +97,41 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' || (isset($_GET['keywords']) && !empty(
 
 $totalPages = ceil($totalResults / $resultsPerPage);
 $conn->close();
+
+function extractKeywordsFromFile($content) {
+    // Define stopwords to remove
+    $stopwords = [
+        'the', 'and', 'of', 'to', 'a', 'in', 'that', 'with', 'for', 'on', 'as', 'was', 'at', 'by', 
+        'is', 'an', 'be', 'this', 'which', 'are', 'it', 'from', 'or', 'has', 'have', 'had', 'not', 
+        'but', 'can', 'do', 'does', 'did', 'will', 'would', 'shall', 'should', 'may', 'might', 
+        'must', 'could', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'them', 'me', 'him', 'her', 'us',
+        'our'
+    ];
+
+    // Remove punctuation, convert to lowercase, and split into words
+    $words = preg_split('/\s+/', strtolower(preg_replace('/[^\w\s]/', '', $content)));
+
+    // Remove stopwords
+    $filteredWords = array_filter($words, function($word) use ($stopwords) {
+        return !in_array($word, $stopwords);
+    });
+
+    // Count word frequencies
+    $wordCounts = array_count_values($filteredWords);
+
+    // Sort by frequency (descending)
+    arsort($wordCounts);
+
+    // Extract top 5 frequent words
+    $topWords = array_slice(array_keys($wordCounts), 0, 5);
+
+    // Extract only nouns and adjectives (basic approach using regex for demonstration purposes)
+    $nounsAndAdjectives = array_filter($topWords, function($word) {
+        return preg_match('/\b\w{3,}\b/', $word); // Simple rule: words with at least 3 characters
+    });
+
+    return implode(',', $nounsAndAdjectives);
+}
 ?>
 
 <!DOCTYPE html>
@@ -93,61 +142,62 @@ $conn->close();
     <title>Islamic Explorer</title>
     <link rel="stylesheet" href="islamicsearchstyles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-
 </head>
 <body>
 
-   <!-- Navbar -->
-   <div class="navbar">
-        <div class="navbar-left">
-            <button class="open-btn" onclick="toggleSidebar()">☰</button> <!-- Sidebar toggle button -->
-            QalamiQuest
-        </div>
-        <div class="navbar-right">
-            <i class="fas fa-bell bell-icon"></i> <!-- Bell icon -->
-            <span><?php echo strtoupper($_SESSION['user_name']); ?></span> <!-- Display logged in user's name -->
-            <i class="fas fa-user"></i> <!-- Profile icon -->
-        </div>
+<!-- Navbar -->
+<div class="navbar">
+    <div class="navbar-left">
+        <button class="open-btn" onclick="toggleSidebar()">☰</button> <!-- Sidebar toggle button -->
+        QalamiQuest
     </div>
-
-     <!-- Sidebar -->
-     <div class="sidebar" id="sidebar">
-        <a href="../student_dashboard.php"><i class="fas fa-home"></i> Dashboard</a>
-        <a href="../islamicsearch/bookmark/view_bookmarks.php"><i class="fas fa-bookmark"></i> Bookmark</a>
-        <a href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    <div class="navbar-right">
+        <i class="fas fa-bell bell-icon"></i> <!-- Bell icon -->
+        <span><?php echo strtoupper($_SESSION['user_name']); ?></span> <!-- Display logged in user's name -->
+        <i class="fas fa-user"></i> <!-- Profile icon -->
     </div>
+</div>
 
-        <!-- JavaScript to toggle sidebar -->
-        <script>
-        function toggleSidebar() {
-            const sidebar = document.getElementById("sidebar");
-            const mainContent = document.getElementById("main-content");
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+    <a href="../student_dashboard.php"><i class="fas fa-home"></i> Dashboard</a>
+    <a href="../islamicsearch/bookmark/view_bookmarks.php"><i class="fas fa-bookmark"></i> Bookmark</a>
+    <a href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
+</div>
 
-            // Check if the sidebar is currently open or closed
-            if (sidebar.style.left === "0px") {
-                sidebar.style.left = "-300px"; // Close the sidebar
-                mainContent.style.marginLeft = "0"; // Reset the main content margin
-            } else {
-                sidebar.style.left = "0"; // Open the sidebar
-                mainContent.style.marginLeft = "240px"; // Shift the main content
-            }
-        }
-        </script>
+<!-- JavaScript to toggle sidebar -->
+<script>
+function toggleSidebar() {
+    const sidebar = document.getElementById("sidebar");
+    const mainContent = document.getElementById("main-content");
+
+    if (sidebar.style.left === "0px") {
+        sidebar.style.left = "-300px";
+        mainContent.style.marginLeft = "0";
+    } else {
+        sidebar.style.left = "0";
+        mainContent.style.marginLeft = "240px";
+    }
+}
+</script>
+
 <div id="main-content">
     <div class="container">
         <h1>ISLAMIC EXPLORER</h1>
         <p>Search for keywords in the Quran<br>(Maximum 5 keywords, separate with commas)</p>
         
-        <form action="" method="POST" onsubmit="return validateKeywords()">
+        <form action="" method="POST" enctype="multipart/form-data" onsubmit="return validateKeywords()">
             <div class="search-container">
+                <!-- Text Input for Keywords -->
                 <input type="text" 
                        id="keywords"
                        name="keywords" 
                        class="search-input"
                        placeholder="Example: peace, mercy, blessing" 
                        value="<?php echo htmlspecialchars($keywords); ?>" 
-                       oninput="updateKeywordCount()"
-                       required>
+                       oninput="updateKeywordCount()">
+                <!-- File Upload Input -->
+                <input type="file" name="keywords_file" accept=".txt">
                 <div class="keyword-tags" id="keywordTags"></div>
                 <div class="keyword-count" id="keywordCount">0 keywords (maximum 5)</div>
                 <?php if (isset($error)): ?>
@@ -156,14 +206,6 @@ $conn->close();
                 <button class="search" type="submit">Search</button>
             </div>
         </form>
-
-        <div class="upload-container">
-    <p>Upload a file to find related Quranic Ayats:</p>
-    <form action="suggest_ayat.php" method="POST" enctype="multipart/form-data">
-        <input type="file" name="uploaded_file" required>
-        <button type="submit" class="btn-upload">Upload & Analyze</button>
-    </form>
-</div>
         
         <div class="results">
             <?php if (!empty($results)): ?>
@@ -199,55 +241,34 @@ $conn->close();
             <?php endif; ?>
         </div>
     </div>
-    </div>
+</div>
 
-    <script>
-        function updateKeywordCount() {
-            const input = document.getElementById('keywords');
-            const keywordTags = document.getElementById('keywordTags');
-            const keywordCount = document.getElementById('keywordCount');
-            
-            // Split by comma and filter out empty strings
-            const keywords = input.value
-                .split(',')
-                .map(k => k.trim())
-                .filter(k => k.length > 0);
-            
-            // Update keyword count
-            keywordCount.textContent = `${keywords.length} keywords (maximum 5)`;
-            
-            // Update keyword tags
-            keywordTags.innerHTML = keywords
-                .map(keyword => `<div class="keyword-tag">${keyword}</div>`)
-                .join('');
-            
-            // Update count color based on limit
-            if (keywords.length > 5) {
-                keywordCount.style.color = '#dc2626';
-            } else {
-                keywordCount.style.color = '#666';
-            }
-        }
+<script>
+// Real-time keyword count update
+function updateKeywordCount() {
+    const input = document.getElementById('keywords');
+    const keywordTags = document.getElementById('keywordTags');
+    const keywordCount = document.getElementById('keywordCount');
+    const keywords = input.value.split(',').map(k => k.trim()).filter(k => k.length > 0);
+    keywordCount.textContent = `${keywords.length} keywords (maximum 5)`;
+    keywordTags.innerHTML = keywords.map(keyword => `<div class="keyword-tag">${keyword}</div>`).join('');
+    keywordCount.style.color = keywords.length > 5 ? '#dc2626' : '#666';
+}
 
-        function validateKeywords() {
-            const input = document.getElementById('keywords');
-            const keywords = input.value
-                .split(',')
-                .map(k => k.trim())
-                .filter(k => k.length > 0);
-            
-            if (keywords.length > 5) {
-                alert('Please enter no more than 5 keywords.');
-                return false;
-            }
-            return true;
-        }
+function validateKeywords() {
+    const input = document.getElementById('keywords');
+    const keywords = input.value.split(',').map(k => k.trim()).filter(k => k.length > 0);
+    if (keywords.length > 5) {
+        alert('Please enter no more than 5 keywords.');
+        return false;
+    }
+    return true;
+}
 
-        // Initial update on page load
-        updateKeywordCount();
+updateKeywordCount();
 
-        // Update this part in your JavaScript code
-        document.addEventListener('DOMContentLoaded', function() {
+// Update this part in your JavaScript code
+document.addEventListener('DOMContentLoaded', function() {
             const bookmarkButtons = document.querySelectorAll('.bookmark-btn');
             bookmarkButtons.forEach(button => {
                 button.addEventListener('click', async function() {
@@ -293,6 +314,7 @@ $conn->close();
                 });
             });
         });
-    </script>
+
+</script>
 </body>
 </html>
