@@ -53,19 +53,28 @@ $supervisors_result = $conn->query($supervisors_query);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QalamiQuest Dashboard</title>
+    <link rel="stylesheet" href="styles.css"> <!-- Link to your external CSS file -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <title>Assign Supervisor</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap');
+
+        /* Global styles for body */
         body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
+            font-family: 'Montserrat', sans-serif;
             margin: 0;
-            padding: 20px;
-            background-color: #f5f5f5;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background: linear-gradient(to bottom, #ffffff, #EDFFFF);
+            /* Background gradient */
         }
 
         .container {
-            max-width: 600px;
-            margin: 0 auto;
+            max-width: 100%;
+            margin: 15px 300px;
             background-color: white;
             padding: 20px;
             border-radius: 8px;
@@ -135,7 +144,7 @@ $supervisors_result = $conn->query($supervisors_query);
             text-align: center;
         }
 
-        button:hover {
+        .submit:hover {
             background-color: #0056b3;
         }
 
@@ -150,6 +159,25 @@ $supervisors_result = $conn->query($supervisors_query);
 </head>
 
 <body>
+    <div class="navbar">
+        <div class="navbar-left">
+            <button class="open-btn" onclick="toggleSidebar()">☰</button> <!-- Sidebar toggle button -->
+            QalamiQuest
+        </div>
+        <div class="navbar-right">
+            <span><?php echo strtoupper($_SESSION['user_name']); ?></span> <!-- Display logged in user's name -->
+            <i class="fas fa-user"></i> <!-- Profile icon -->
+        </div>
+    </div>
+
+    <div class="sidebar" id="sidebar">
+        <a href="student_dashboard.php"><i class="fas fa-home"></i> Dashboard</a>
+        <a href="assign_sv.php"><i class="fas fa-users"></i> Apply Supervisor</a>
+        <a href="islamicsearch/bookmark/view_bookmarks.php"><i class="fas fa-bookmark"></i> Bookmark</a>
+        <a href="edit_profile.php"><i class="fas fa-user"></i> Edit Profile</a>
+        <a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+
     <div class="container">
         <h1>Assign Supervisor</h1>
 
@@ -172,13 +200,29 @@ $supervisors_result = $conn->query($supervisors_query);
                 </select>
             </div>
             <div class="button-group">
-                <button type="button" class="back-button"
-                    onclick="window.location.href='student_dashboard.php'">Back</button>
-                <button type="submit">Submit Request</button>
+            <button type="button" class="back-button" onclick="history.back()">Cancel</button>
+
+
+                <button type="submit" class="submit">Submit Request</button>
             </div>
 
         </form>
     </div>
 </body>
+<script>
+    function toggleSidebar() {
+        const sidebar = document.getElementById("sidebar");
+        const mainContent = document.getElementById("main-content");
+
+        // Check if the sidebar is currently open or closed
+        if (sidebar.style.left === "0px") {
+            sidebar.style.left = "-300px"; // Close the sidebar
+            mainContent.style.marginLeft = "0"; // Reset the main content margin
+        } else {
+            sidebar.style.left = "0"; // Open the sidebar
+            mainContent.style.marginLeft = "240px"; // Shift the main content
+        }
+    }
+</script>
 
 </html>

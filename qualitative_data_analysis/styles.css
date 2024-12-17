@@ -11,18 +11,7 @@
             --error-color: #e74c3c;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--background-color);
-            color: var(--text-color);
-            line-height: 1.6;
-        }
+       
 
         .container {
             max-width: 900px;
@@ -31,11 +20,13 @@
             background-color: var(--card-background);
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             border-radius: 12px;
+            box-sizing: border-box;
+
         }
 
         h1 {
             text-align: center;
-            color: var(--primary-color);
+            color: black;
             margin-bottom: 1.5rem;
             font-weight: 600;
         }
@@ -56,7 +47,7 @@
 
         .section-card h3 {
             color: var(--primary-color);
-            margin-bottom: 1rem;
+            margin-bottom: 2rem;
             font-weight: 500;
         }
 
@@ -104,6 +95,8 @@
             cursor: pointer;
             height: 40px;
             white-space: nowrap;
+            box-sizing: border-box;
+            margin: 0;
         }
 
         .btn-primary {

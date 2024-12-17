@@ -106,7 +106,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             QalamiQuest
         </div>
         <div class="navbar-right">
-            <i class="fas fa-bell bell-icon"></i>
             <span><?php echo $lecturer_name; ?></span>
             <i class="fas fa-user"></i>
         </div>
@@ -115,6 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="sidebar" id="sidebar">
         <a href="lecturer_dashboard.php"><i class="fas fa-home"></i> Dashboard</a>
         <a href="approval.php" class="active"><i class="fas fa-check-circle"></i> Approval</a>
+        <a href="lecturer_archive.php"><i class="fas fa-archive"></i> Archive Proposals</a>
         <a href="../edit_profile.php"><i class="fas fa-user"></i> Edit Profile</a>
         <a href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>

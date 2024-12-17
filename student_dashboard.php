@@ -10,17 +10,14 @@ if (!isset($_SESSION['user_id'])) {
 
 // Handle "Add Proposal" navigation
 if (isset($_GET['action']) && $_GET['action'] === 'add_proposal') {
-    // Insert a new proposal for the user in the database
     $userId = $_SESSION['user_id'];
     $query = "INSERT INTO proposals (user_id, title, status, last_saved) VALUES (?, 'New Proposal (Rename)', 0, NOW())";
     $stmt = $conn->prepare($query);
     $stmt->bind_param('i', $userId);
     if ($stmt->execute()) {
-        // Get the ID of the newly created proposal
         $proposalId = $stmt->insert_id;
         $stmt->close();
 
-        // Redirect to step1.php with the proposal ID
         header("Location: proposal/step1.php?proposal_id=$proposalId");
         exit;
     } else {
@@ -28,11 +25,31 @@ if (isset($_GET['action']) && $_GET['action'] === 'add_proposal') {
     }
 }
 
-// Fetch recent proposals for the logged-in user
+// Pagination setup
+$results_per_page = 5; // Number of proposals per page
+$page = isset($_GET['page']) ? (int) $_GET['page'] : 1; // Current page number
+$page = max(1, $page); // Ensure page is at least 1
+
+// Calculate offset
+$offset = ($page - 1) * $results_per_page;
+
+// Fetch total number of proposals
 $userId = $_SESSION['user_id'];
-$query = "SELECT proposal_id, title, status, last_saved FROM proposals WHERE user_id = ? ORDER BY last_saved DESC";
-$stmt = $conn->prepare($query);
+$total_proposals_query = "SELECT COUNT(*) as total FROM proposals WHERE user_id = ?";
+$stmt = $conn->prepare($total_proposals_query);
 $stmt->bind_param('i', $userId);
+$stmt->execute();
+$total_result = $stmt->get_result();
+$total_proposals = $total_result->fetch_assoc()['total'];
+$stmt->close();
+
+// Calculate total pages
+$total_pages = ceil($total_proposals / $results_per_page);
+
+// Fetch recent proposals for the logged-in user with pagination
+$query = "SELECT proposal_id, title, status, last_saved FROM proposals WHERE user_id = ? ORDER BY last_saved DESC LIMIT ? OFFSET ?";
+$stmt = $conn->prepare($query);
+$stmt->bind_param('iii', $userId, $results_per_page, $offset);
 $stmt->execute();
 $result = $stmt->get_result();
 $recentProposals = $result->fetch_all(MYSQLI_ASSOC);
@@ -46,12 +63,71 @@ $stmt->close();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QalamiQuest Dashboard</title>
-    <link rel="stylesheet" href="styles.css"> <!-- Link to your external CSS file -->
+    <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Existing styles from the previous code */
+        .btn-view {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .btn-view:hover {
+            background-color: #0056b3;
+        }
+
+        .btn-view i {
+            margin-right: 5px;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            user-select: none;
+            gap: 10px;
+            /* This replaces margin and prevents line breaks */
+            flex-wrap: wrap;
+            /* Allows wrapping on smaller screens */
+        }
+
+        .pagination-btn {
+            background-color: #f0f0f0;
+            border: 1px solid #ddd;
+            color: #333;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            /* Remove underline from links */
+            transition: all 0.3s ease;
+        }
+
+        .pagination-btn:hover:not(.pagination-btn-disabled) {
+            background-color: #e0e0e0;
+        }
+
+        .pagination-btn-current {
+            background-color: #007bff;
+            color: white;
+            pointer-events: none;
+        }
+
+        .pagination-btn-disabled {
+            color: #cccccc;
+            cursor: not-allowed;
+        }
+    </style>
 </head>
 
 <body>
-
     <!-- Navbar -->
     <div class="navbar">
         <div class="navbar-left">
@@ -59,7 +135,6 @@ $stmt->close();
             QalamiQuest
         </div>
         <div class="navbar-right">
-            <i class="fas fa-bell bell-icon"></i> <!-- Bell icon -->
             <span><?php echo strtoupper($_SESSION['user_name']); ?></span> <!-- Display logged in user's name -->
             <i class="fas fa-user"></i> <!-- Profile icon -->
         </div>
@@ -69,13 +144,14 @@ $stmt->close();
     <div class="sidebar" id="sidebar">
         <a href="student_dashboard.php"><i class="fas fa-home"></i> Dashboard</a>
         <a href="assign_sv.php"><i class="fas fa-users"></i> Apply Supervisor</a>
-        <a href="../islamicsearch/bookmark/view_bookmarks.php"><i class="fas fa-bookmark"></i> Bookmark</a>
+        <a href="islamicsearch/bookmark/view_bookmarks.php"><i class="fas fa-bookmark"></i> Bookmark</a>
         <a href="edit_profile.php"><i class="fas fa-user"></i> Edit Profile</a>
         <a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 
     <!-- Main Dashboard Content -->
     <div id="main-content">
+
         <div class="service-grid">
             <div class="service-box" onclick="window.location.href='islamicsearch/islamicsearch.php'">
                 <i class="fas fa-search"></i>
@@ -84,7 +160,7 @@ $stmt->close();
             </div>
             <div class="service-box" onclick="window.location.href='student_lounge/student_discussion.php'">
                 <i class="fas fa-comments"></i>
-                <h3>Student Lounge</h3>
+                <h3>Student Hub</h3>
                 <p>Connecting with others and exchanging ideas.</p>
             </div>
             <div class="service-box" onclick="window.location.href='student_dashboard.php?action=add_proposal'">
@@ -92,7 +168,8 @@ $stmt->close();
                 <h3>Add/Edit Proposal</h3>
                 <p>Guiding you to write a proper proposal.</p>
             </div>
-            <div class="service-box" onclick="window.location.href='qualitative_data_analysis/qualitative_data_analysis.php'">
+            <div class="service-box"
+                onclick="window.location.href='qualitative_data_analysis/qualitative_data_analysis.php'">
                 <i class="fas fa-chart-line"></i>
                 <h3>Qualitative Data Analysis</h3>
                 <p>Proceeding your qualitative research here in an easier way.</p>
@@ -101,7 +178,7 @@ $stmt->close();
 
         <!-- Recent Section -->
         <div class="recent-section">
-            <h2>Recent</h2>
+            <h2>Recent Proposals</h2>
             <table class="recent-table">
                 <thead>
                     <tr>
@@ -112,85 +189,112 @@ $stmt->close();
                     </tr>
                 </thead>
                 <tbody>
-    <?php if (empty($recentProposals)): ?>
-        <tr>
-            <td colspan="4">No recent activity</td>
-        </tr>
-    <?php else: ?>
-        <?php foreach ($recentProposals as $proposal): ?>
-            <tr>
-                <td>
-                    <!-- Use <p> instead of <a> and add icon -->
-                    <p style="cursor: pointer;" onclick="checkProposalStatus(<?php echo $proposal['status']; ?>, <?php echo $proposal['proposal_id']; ?>)">
-                        <i class="fas fa-file"></i> <!-- Icon for edit -->
-                        <?php echo $proposal['title']; ?>
-                    </p>
-                </td>
-                <td><?php echo date('d-m-Y | h:i:s A', strtotime($proposal['last_saved'])); ?></td>
-                <td>
-                    <?php
-                    switch ($proposal['status']) {
-                        case 0:
-                            echo 'In Progress';
-                            break;
-                        case 1:
-                            echo 'Submitted';
-                            break;
-                        case 2:
-                            echo 'Approved';
-                            break;
-                        case 3:
-                            echo 'Required Progress';
-                            break;
-                        default:
-                            echo 'Unknown';
-                    }
-                    ?>
-                </td>
-                <td>
-                    <!-- View Comments Button -->
-                    <?php if ($proposal['status'] >= 0): ?>
-                        <button onclick="window.location.href='view_comment.php?proposal_id=<?php echo $proposal['proposal_id']; ?>'">
-                            View
-                        </button>
+                    <?php if (empty($recentProposals)): ?>
+                        <tr>
+                            <td colspan="4">No recent activity</td>
+                        </tr>
+                    <?php else: ?>
+                        <?php foreach ($recentProposals as $proposal): ?>
+                            <tr>
+                                <td>
+                                    <p style="cursor: pointer;"
+                                        onclick="checkProposalStatus(<?php echo $proposal['status']; ?>, <?php echo $proposal['proposal_id']; ?>)">
+                                        <i class="fas fa-file"></i>
+                                        <?php echo $proposal['title']; ?>
+                                    </p>
+                                </td>
+                                <td><?php echo date('d-m-Y | h:i:s A', strtotime($proposal['last_saved'])); ?></td>
+                                <td>
+                                    <?php
+                                    switch ($proposal['status']) {
+                                        case 0:
+                                            echo 'In Progress';
+                                            break;
+                                        case 1:
+                                            echo 'Submitted';
+                                            break;
+                                        case 2:
+                                            echo 'Approved';
+                                            break;
+                                        case 3:
+                                            echo 'Required Progress';
+                                            break;
+                                        default:
+                                            echo 'Unknown';
+                                    }
+                                    ?>
+                                </td>
+                                <td>
+                                    <?php if ($proposal['status'] >= 0): ?>
+                                        <button class="btn-view"
+                                            onclick="window.location.href='view_comment.php?proposal_id=<?php echo $proposal['proposal_id']; ?>'">
+                                            View
+                                        </button>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
                     <?php endif; ?>
-                </td>
-            </tr>
-        <?php endforeach; ?>
-    <?php endif; ?>
-</tbody>
-
+                </tbody>
             </table>
+
+            <!-- Pagination Section -->
+            <div class="pagination">
+                <?php if ($page > 1): ?>
+                    <a href="?page=1" class="pagination-btn">First</a>
+                    <a href="?page=<?php echo $page - 1; ?>" class="pagination-btn">Previous</a>
+                <?php else: ?>
+                    <span class="pagination-btn pagination-btn-disabled">First</span>
+                    <span class="pagination-btn pagination-btn-disabled">Previous</span>
+                <?php endif; ?>
+
+                <?php
+                // Show page numbers
+                $start = max(1, $page - 2);
+                $end = min($total_pages, $page + 2);
+
+                for ($i = $start; $i <= $end; $i++): ?>
+                    <?php if ($i == $page): ?>
+                        <span class="pagination-btn pagination-btn-current"><?php echo $i; ?></span>
+                    <?php else: ?>
+                        <a href="?page=<?php echo $i; ?>" class="pagination-btn"><?php echo $i; ?></a>
+                    <?php endif; ?>
+                <?php endfor; ?>
+
+                <?php if ($page < $total_pages): ?>
+                    <a href="?page=<?php echo $page + 1; ?>" class="pagination-btn">Next</a>
+                    <a href="?page=<?php echo $total_pages; ?>" class="pagination-btn">Last</a>
+                <?php else: ?>
+                    <span class="pagination-btn pagination-btn-disabled">Next</span>
+                    <span class="pagination-btn pagination-btn-disabled">Last</span>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
 
-    <!-- JavaScript to toggle sidebar -->
+    <!-- Previous JavaScript remains the same -->
     <script>
         function toggleSidebar() {
             const sidebar = document.getElementById("sidebar");
             const mainContent = document.getElementById("main-content");
 
-            // Check if the sidebar is currently open or closed
             if (sidebar.style.left === "0px") {
-                sidebar.style.left = "-300px"; // Close the sidebar
-                mainContent.style.marginLeft = "0"; // Reset the main content margin
+                sidebar.style.left = "-300px";
+                mainContent.style.marginLeft = "0";
             } else {
-                sidebar.style.left = "0"; // Open the sidebar
-                mainContent.style.marginLeft = "240px"; // Shift the main content
+                sidebar.style.left = "0";
+                mainContent.style.marginLeft = "240px";
             }
         }
 
-        // JavaScript function to check proposal status
         function checkProposalStatus(status, proposalId) {
-            if (status === 1 || status === 2) {  // Check if status is Submitted (1) or Approved (2)
+            if (status === 1 || status === 2) {
                 alert("This proposal cannot be edited because it has been submitted or approved.");
             } else {
-                // If the proposal is not submitted or approved, redirect to the editing page
                 window.location.href = "proposal/step1.php?proposal_id=" + proposalId;
             }
         }
     </script>
-
 </body>
 
 </html>

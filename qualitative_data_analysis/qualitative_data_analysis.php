@@ -6,38 +6,33 @@ include('../db_connection.php'); // Replace with your DB connection file
 $current_user_id = $_SESSION['user_id']; // Ensure the session holds the logged-in user ID
 
 // Check progress for each section
-$query = "SELECT * FROM progress WHERE student_id = ?";
+$query = "SELECT * FROM submission WHERE student_id = ?";
 $stmt = $conn->prepare($query);
 $stmt->bind_param("i", $current_user_id);
 $stmt->execute();
 $result = $stmt->get_result();
-$progress = $result->fetch_assoc();
 
-// Default progress (if not available yet)
-if (!$progress) {
-    $progress = [
-        'semi_structured_status' => 'pending',
-        'data_analysis_status' => 'pending',
-        'themes_status' => 'pending',
-    ];
+$progress = [];
+while ($row = $result->fetch_assoc()) {
+    $progress[$row['section']] = 'submitted'; // Mark section as 'submitted' if it exists
 }
 
-// Sections data
+// Default progress (if not available yet)
 $sections = [
     [
         'key' => 'semi_structured',
         'title' => 'Semi-Structured Interview',
-        'status' => $progress['semi_structured_interview']
+        'status' => isset($progress['semi_structured']) ? $progress['semi_structured'] : 'pending'
     ],
     [
         'key' => 'data_analysis',
         'title' => 'Data Analysis',
-        'status' => $progress['data_analysis']
+        'status' => isset($progress['data_analysis']) ? $progress['data_analysis'] : 'pending'
     ],
     [
-        'key' => 'themes',
+        'key' => 'generating_themes',
         'title' => 'Generating Themes',
-        'status' => $progress['generating_themes']
+        'status' => isset($progress['generating_themes']) ? $progress['generating_themes'] : 'pending'
     ]
 ];
 
@@ -69,9 +64,34 @@ if (isset($_GET['upload'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Qualitative Data Analysis</title>
     <link rel="stylesheet" href="styles.css"> <!-- Link to your CSS file -->
+    <link rel="stylesheet" href="../styles.css"> <!-- Link to your CSS file -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+
 </head>
 
 <body>
+        <!-- Navbar -->
+        <div class="navbar">
+        <div class="navbar-left">
+            <button class="open-btn" onclick="toggleSidebar()">☰</button> <!-- Sidebar toggle button -->
+            QalamiQuest
+        </div>
+        <div class="navbar-right">
+            <span><?php echo strtoupper($_SESSION['user_name']); ?></span> <!-- Display logged in user's name -->
+            <i class="fas fa-user"></i> <!-- Profile icon -->
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <a href="../student_dashboard.php"><i class="fas fa-home"></i> Dashboard</a>
+        <a href="../assign_sv.php"><i class="fas fa-users"></i> Apply Supervisor</a>
+        <a href="../edit_profile.php"><i class="fas fa-user"></i> Edit Profile</a>
+        <a href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+
+    <div id="main-content">
     <div class="container">
         <!-- Add back button -->
         <div class="page-header">
@@ -80,45 +100,82 @@ if (isset($_GET['upload'])) {
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M15 18l-6-6 6-6" />
                 </svg>
-                Back to Dashboard
             </a>
             <h1>Qualitative Data Analysis</h1>
         </div>
-        <p>Complete the sections in order. Each section must be submitted before unlocking the next.</p>
 
         <div class="sections">
             <?php foreach ($sections as $index => $section): ?>
                 <div class="section-card">
-    <h3><?php echo $section['title']; ?></h3>
+                    <h3><?php echo $section['title']; ?></h3>
 
-    <div class="btn-actions">
-        <div class="btn-actions-left">
-            <a href="download_template.php?section=<?php echo $section['key']; ?>" class="btn-primary">
-                Download Template
-            </a>
-        </div>
+                    <div class="btn-actions">
+                        <div class="btn-actions-left">
+                            <a href="download_template.php?section=<?php echo $section['key']; ?>" class="btn-primary">
+                                Download Template
+                            </a>
+                        </div>
 
-        <div class="btn-actions-right">
-            <form id="uploadForm-<?php echo $section['key']; ?>" method="POST" action="upload.php"
-                enctype="multipart/form-data">
-                <input type="hidden" name="section" value="<?php echo $section['key']; ?>">
+                        <div class="btn-actions-right">
+                            <form id="uploadForm-<?php echo $section['key']; ?>" method="POST" action="upload.php"
+                                enctype="multipart/form-data">
+                                <input type="hidden" name="section" value="<?php echo $section['key']; ?>">
 
-                <label for="file-<?php echo $section['key']; ?>" class="attach-label">Attach</label>
-                <input type="file" id="file-<?php echo $section['key']; ?>" name="file" class="file-input" hidden>
+                                <!-- Hidden file input -->
+                                <label for="file-<?php echo $section['key']; ?>" class="attach-label">Attach</label>
+                                <input type="file" id="file-<?php echo $section['key']; ?>" name="file" class="file-input"
+                                    hidden>
 
-                <button type="submit" class="submit-btn" <?php if ($section['status'] !== 'pending' || ($index > 0 && $sections[$index - 1]['status'] !== 'submitted'))
-                    echo 'disabled'; ?>>
-                    Submit
-                </button>
-            </form>
-        </div>
-    </div>
-</div>
+                                <!-- Display file name -->
+                                <span id="file-name-<?php echo $section['key']; ?>" class="file-name-display">No file
+                                    chosen</span>
+
+                                <button type="submit" class="submit-btn">
+                                    Submit
+                                </button>
+                            </form>
+                        </div>
+
+                    </div>
+                </div>
             <?php endforeach; ?>
         </div>
     </div>
+    </div>
 
     <script>
+           function toggleSidebar() {
+            const sidebar = document.getElementById("sidebar");
+            const mainContent = document.getElementById("main-content");
+
+            // Check if the sidebar is currently open or closed
+            if (sidebar.style.left === "0px") {
+                sidebar.style.left = "-300px"; // Close the sidebar
+                mainContent.style.marginLeft = "0"; // Reset the main content margin
+            } else {
+                sidebar.style.left = "0"; // Open the sidebar
+                mainContent.style.marginLeft = "240px"; // Shift the main content
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', function () {
+        // Select all file inputs
+        const fileInputs = document.querySelectorAll('.file-input');
+
+        fileInputs.forEach(input => {
+            input.addEventListener('change', function () {
+                const fileNameDisplay = document.getElementById(`file-name-${this.id.split('-')[1]}`);
+                
+                // Display file name or "No file chosen" if none is selected
+                if (this.files.length > 0) {
+                    fileNameDisplay.textContent = this.files[0].name;
+                } else {
+                    fileNameDisplay.textContent = 'No file chosen';
+                }
+            });
+        });
+    });
+
         document.addEventListener('DOMContentLoaded', function () {
             const fileInputs = document.querySelectorAll('.file-input');
             const submitButtons = document.querySelectorAll('.submit-btn');

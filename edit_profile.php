@@ -239,8 +239,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <input type="password" id="confirm_password" name="confirm_password">
 
                 <button type="submit" class="submit-button">Update Profile</button>
-                <button type="button" class="cancel-button"
-                    onclick="location.href='<?php echo ($title === 'lecturer') ? 'lecturer_dashboard.php' : 'student_dashboard.php'; ?>'">Cancel</button>
+                <button type="button" class="cancel-button" onclick="history.back()">Cancel</button>
             </form>
         </div>
     </div>

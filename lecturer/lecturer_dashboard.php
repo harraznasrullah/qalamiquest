@@ -1,33 +1,70 @@
 <?php
-session_start(); // Ensure session is started to retrieve user data
+session_start();
 include('../db_connection.php');
 
-// Example: Displaying the lecturer's name if logged in
-$lecturer_name = strtoupper($_SESSION['user_name']); // Retrieve from session after login
+$lecturer_name = strtoupper($_SESSION['user_name']);
 
-// Add a query to get the number of pending supervisor requests
-// Note: Replace with your actual database connection and query
-$query = "SELECT COUNT(*) as request_count FROM supervisors WHERE status = 'pending'";
-$result = $conn->query($query);
-$row = $result->fetch_assoc();
-$pending_requests = $row['request_count'];
+// Handle proposal archiving/deactivation
+if (isset($_GET['action']) && $_GET['action'] == 'archive' && isset($_GET['proposal_id'])) {
+    $proposal_id = intval($_GET['proposal_id']);
 
-$query = "SELECT COUNT(*) as status_count FROM proposals WHERE status = 1";
-$result = $conn->query($query);
-$row = $result->fetch_assoc();
-$pending_status = $row['status_count'];
+    // Update the proposal status to indicate it's archived/hidden for lecturer
+    $archive_query = "UPDATE proposals SET lecturer_visibility = 0 WHERE proposal_id = ?";
+    $stmt = $conn->prepare($archive_query);
+    $stmt->bind_param("i", $proposal_id);
 
-// Modified query to fetch proposals based on approval_date
+    if ($stmt->execute()) {
+        // Redirect to prevent form resubmission
+        header("Location: lecturer_dashboard.php?archive_success=1");
+        exit();
+    } else {
+        // Handle error
+        $archive_error = "Failed to archive proposal.";
+    }
+}
+
+// Pagination setup
+$results_per_page = 5;
+$page = isset($_GET['page']) ? intval($_GET['page']) : 1;
+$offset = ($page - 1) * $results_per_page;
+
+// Total proposals count
+$total_query = "SELECT COUNT(*) as total 
+                FROM proposals p
+                JOIN users u ON p.user_id = u.id 
+                WHERE p.approval_date IS NOT NULL 
+                AND u.title = 'student'";
+$total_result = $conn->query($total_query);
+$total_row = $total_result->fetch_assoc();
+$total_proposals = $total_row['total'];
+$total_pages = ceil($total_proposals / $results_per_page);
+
+// Modify the main query to exclude archived proposals
 $query = "SELECT p.proposal_id, p.title, p.approval_date, p.status, u.fullname AS student_name
           FROM proposals p
           JOIN users u ON p.user_id = u.id 
           WHERE p.approval_date IS NOT NULL 
           AND u.title = 'student'
-          ORDER BY p.approval_date DESC"; // Added ORDER BY to show most recent first
-$result = $conn->query($query);
+          AND (p.lecturer_visibility IS NULL OR p.lecturer_visibility = 1)
+          ORDER BY p.approval_date DESC
+          LIMIT ? OFFSET ?";
+
+$stmt = $conn->prepare($query);
+$stmt->bind_param("ii", $results_per_page, $offset);
+$stmt->execute();
+$result = $stmt->get_result();
+
+// Pending requests and status queries remain the same
+$request_query = "SELECT COUNT(*) as request_count FROM supervisors WHERE status = 'pending'";
+$result_requests = $conn->query($request_query);
+$row_requests = $result_requests->fetch_assoc();
+$pending_requests = $row_requests['request_count'];
+
+$status_query = "SELECT COUNT(*) as status_count FROM proposals WHERE status = 1";
+$result_status = $conn->query($status_query);
+$row_status = $result_status->fetch_assoc();
+$pending_status = $row_status['status_count'];
 ?>
-
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -40,10 +77,63 @@ $result = $conn->query($query);
     <link rel="stylesheet" href="lecturer_style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* Existing styles */
+        .overview-title {
+            display: flex;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+        }
+
+        .overview-title i {
+            margin-right: 10px;
+        }
+
+        .overview-controls {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-start;
+        }
+
+        .approval-btn {
+            background-color: #fff;
+            border: 2px solid #007bff;
+            color: #007bff;
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         .approval-btn:hover {
-            background-color: #004d4d;
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+            background-color: #007bff;
+            color: white;
+            box-shadow: 0 4px 8px rgba(0, 77, 77, 0.2);
+        }
+
+        .approval-btn .notification-badge {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background-color: #dc3545;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 12px;
+            min-width: 20px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         /* New notification styles */
@@ -137,6 +227,107 @@ $result = $conn->query($query);
         .btn-view i {
             margin-right: 5px;
         }
+
+
+        /* Pagination Styles */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            gap: 10px;
+        }
+
+        .pagination a,
+        .pagination span {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            color: #007bff;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .pagination a:hover {
+            background-color: #f0f0f0;
+        }
+
+        .pagination .current {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        .pagination .disabled {
+            color: #6c757d;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        /* Archive Button Styles */
+        .btn-archive {
+            background-color: #d3d3d3;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+            margin-left: 5px;
+        }
+
+        .btn-archive:hover {
+            background-color: #c0c0c0;
+        }
+
+        .btn-cancel {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+            margin-left: 5px;
+        }
+
+        .btn-cancel:hover {
+            background-color: #c0392b;
+        }
+
+        .btn-archive i {
+            margin-right: 5px;
+        }
+
+        /* Confirmation Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 5px;
+            width: 300px;
+            text-align: center;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
     </style>
 </head>
 
@@ -148,7 +339,6 @@ $result = $conn->query($query);
             QalamiQuest
         </div>
         <div class="navbar-right">
-            <i class="fas fa-bell bell-icon"></i>
             <span><?php echo $lecturer_name; ?></span>
             <i class="fas fa-user"></i>
         </div>
@@ -158,6 +348,7 @@ $result = $conn->query($query);
     <div class="sidebar" id="sidebar">
         <a href="lecturer_dashboard.php"><i class="fas fa-home"></i> Dashboard</a>
         <a href="approval.php"><i class="fas fa-check-circle"></i> Approval</a>
+        <a href="lecturer_archive.php"><i class="fas fa-archive"></i> Archive Proposals</a>
         <a href="../edit_profile.php"><i class="fas fa-user"></i> Edit Profile</a>
         <a href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
@@ -170,7 +361,8 @@ $result = $conn->query($query);
                 <i class="fas fa-clipboard-list"></i> PROPOSAL'S OVERVIEW
             </div>
             <div class="overview-controls">
-            <button class="approval-btn relative" onclick="window.location.href='view_qualitative_data_analysis.php'">
+                <button class="approval-btn relative"
+                    onclick="window.location.href='view_qualitative_data_analysis.php'">
                     Other Submission
                 </button>
                 <button class="approval-btn relative" onclick="window.location.href='approval.php'">
@@ -182,7 +374,7 @@ $result = $conn->query($query);
                     <?php endif; ?>
                 </button>
                 <button class="approval-btn relative" onclick="window.location.href='approve_sv.php'">
-                    Supervisor Request
+                    Student Request
                     <?php if ($pending_requests > 0): ?>
                         <div class="notification-badge">
                             <?php echo $pending_requests; ?>
@@ -203,16 +395,13 @@ $result = $conn->query($query);
                         <th>Approval Date</th>
                         <th>Status</th>
                         <th>Action</th>
-
-
                     </tr>
                 </thead>
                 <tbody>
                     <?php
                     if ($result->num_rows > 0) {
-                        $no = 1;
+                        $no = 1 + (($page - 1) * $results_per_page);
                         while ($row = $result->fetch_assoc()) {
-                            // Map status codes to human-readable text
                             $status_text = $row['status'] == 2 ? 'Approved' : 'Required Progress';
                             ?>
                             <tr>
@@ -225,6 +414,10 @@ $result = $conn->query($query);
                                     <button type="button" onclick="viewProposal(<?php echo $row['proposal_id']; ?>)"
                                         class="btn-view">
                                         <i class="fas fa-eye"></i> View
+                                    </button>
+                                    <button type="button" onclick="confirmArchive(<?php echo $row['proposal_id']; ?>)"
+                                        class="btn-archive">
+                                        <i class="fas fa-archive"></i> Archive
                                     </button>
                                 </td>
                             </tr>
@@ -241,29 +434,84 @@ $result = $conn->query($query);
                 </tbody>
             </table>
 
-            </table>
+            <!-- Pagination -->
+            <div class="pagination">
+                <?php if ($page > 1): ?>
+                    <a href="?page=1">First</a>
+                    <a href="?page=<?php echo $page - 1; ?>">Previous</a>
+                <?php endif; ?>
+
+                <?php
+                // Show page numbers with ellipsis for large number of pages
+                $start = max(1, $page - 2);
+                $end = min($total_pages, $page + 2);
+
+                for ($i = $start; $i <= $end; $i++): ?>
+                    <?php if ($i == $page): ?>
+                        <span class="current"><?php echo $i; ?></span>
+                    <?php else: ?>
+                        <a href="?page=<?php echo $i; ?>"><?php echo $i; ?></a>
+                    <?php endif; ?>
+                <?php endfor; ?>
+
+                <?php if ($page < $total_pages): ?>
+                    <a href="?page=<?php echo $page + 1; ?>">Next</a>
+                    <a href="?page=<?php echo $total_pages; ?>">Last</a>
+                <?php endif; ?>
+            </div>
         </div>
-    </div>
 
-    <!-- JavaScript to toggle sidebar -->
-    <script>
-        function toggleSidebar() {
-            var sidebar = document.getElementById("sidebar");
-            var mainContent = document.getElementById("main-content");
+        <!-- Archive Confirmation Modal -->
+        <div id="archiveModal" class="modal">
+            <div class="modal-content">
+                <h2>Confirm Archiving</h2>
+                <p>Are you sure you want to archive this proposal?
+                    It will be hidden from your dashboard but the student can still access it.</p>
+                <div class="modal-buttons">
+                    <button onclick="cancelArchive()" class="btn-cancel">Cancel</button>
+                    <button onclick="proceedArchive()" class="btn-archive">Archive</button>
+                </div>
+            </div>
+        </div>
 
-            if (sidebar.style.left === "0px") {
-                sidebar.style.left = "-250px";
-                mainContent.style.marginLeft = "0";
-            } else {
-                sidebar.style.left = "0";
-                mainContent.style.marginLeft = "250px";
+        <script>
+            let proposalToArchive = null;
+
+            function confirmArchive(proposalId) {
+                proposalToArchive = proposalId;
+                document.getElementById('archiveModal').style.display = 'block';
             }
-        }
-        function viewProposal(proposalId) {
-            window.location.href = `../view_comment.php?proposal_id=${proposalId}`;
-        }
-    </script>
 
+
+            function cancelArchive() {
+                proposalToArchive = null;
+                document.getElementById('archiveModal').style.display = 'none';
+            }
+
+            function proceedArchive() {
+                if (proposalToArchive) {
+                    window.location.href = `lecturer_dashboard.php?action=archive&proposal_id=${proposalToArchive}`;
+                }
+            }
+
+            function viewProposal(proposalId) {
+                window.location.href = `../view_comment.php?proposal_id=${proposalId}`;
+            }
+
+            function toggleSidebar() {
+                var sidebar = document.getElementById("sidebar");
+                var mainContent = document.getElementById("main-content");
+
+                if (sidebar.style.left === "0px") {
+                    sidebar.style.left = "-250px";
+                    mainContent.style.marginLeft = "0";
+                } else {
+                    sidebar.style.left = "0";
+                    mainContent.style.marginLeft = "250px";
+                }
+            }
+
+        </script>
 </body>
 
 </html>
