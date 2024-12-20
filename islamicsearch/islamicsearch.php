@@ -19,82 +19,80 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 } elseif (isset($_GET['keywords'])) {
     $keywords = $_GET['keywords'];
 }
-{
 
-    // Handle file upload
-    if (isset($_FILES['keywords_file']) && $_FILES['keywords_file']['error'] === UPLOAD_ERR_OK) {
-        $fileTmpPath = $_FILES['keywords_file']['tmp_name'];
-        $fileContent = file_get_contents($fileTmpPath);
+// Handle file upload
+if (isset($_FILES['keywords_file']) && $_FILES['keywords_file']['error'] === UPLOAD_ERR_OK) {
+    $fileTmpPath = $_FILES['keywords_file']['tmp_name'];
+    $fileContent = file_get_contents($fileTmpPath);
 
-        // Extract keywords from file
-        $fileKeywords = extractKeywordsFromFile($fileContent); // Use helper function
+    // Extract keywords from file
+    $fileKeywords = extractKeywordsFromFile($fileContent); // Use helper function
+}
+
+// Combine keywords from input and file
+$allKeywords = $keywords . ',' . $fileKeywords;
+$keywordsArray = array_map('trim', explode(',', $allKeywords));
+$keywordsArray = array_filter($keywordsArray); // Remove empty elements
+
+if (count($keywordsArray) > 5) {
+    $error = "Please enter up to 5 keywords only.";
+} else {
+    // Build the query using LIKE
+    $conditions = [];
+    $params = [];
+    $types = '';
+
+    foreach ($keywordsArray as $keyword) {
+        $conditions[] = "english_translation LIKE ?";
+        $params[] = "%$keyword%";
+        $types .= 's';
     }
 
-    // Combine keywords from input and file
-    $allKeywords = $keywords . ',' . $fileKeywords;
-    $keywordsArray = array_map('trim', explode(',', $allKeywords));
-    $keywordsArray = array_filter($keywordsArray); // Remove empty elements
+    // Count total results for pagination
+    $countQuery = "SELECT COUNT(*) as total FROM quran WHERE " . implode(" OR ", $conditions);
+    try {
+        $countStmt = $conn->prepare($countQuery);
+        if ($params) {
+            $countStmt->bind_param($types, ...$params);
+        }
+        $countStmt->execute();
+        $totalResults = $countStmt->get_result()->fetch_assoc()['total'];
+        $countStmt->close();
 
-    if (count($keywordsArray) > 5) {
-        $error = "Please enter up to 5 keywords only.";
-    } else {
-        // Build the query using LIKE
-        $conditions = [];
-        $params = [];
-        $types = '';
+        // Main query with pagination
+        $query = "SELECT surah, ayat, text, english_translation 
+                  FROM quran 
+                  WHERE " . implode(" OR ", $conditions) . "
+                  LIMIT ? OFFSET ?";
+        
+        $stmt = $conn->prepare($query);
+        
+        // Add pagination parameters
+        $types .= 'ii';
+        $params[] = $resultsPerPage;
+        $params[] = $offset;
+        
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $result = $stmt->get_result();
 
-        foreach ($keywordsArray as $keyword) {
-            $conditions[] = "english_translation LIKE ?";
-            $params[] = "%$keyword%";
-            $types .= 's';
+        while ($row = $result->fetch_assoc()) {
+            // Highlight keywords in English translation
+            $highlightedTranslation = $row['english_translation'];
+            foreach ($keywordsArray as $keyword) {
+                $highlightedTranslation = preg_replace(
+                    '/(' . preg_quote($keyword, '/') . ')/i',
+                    '<span class="highlight">$1</span>',
+                    $highlightedTranslation
+                );
+            }
+            $row['highlighted_translation'] = $highlightedTranslation;
+            $results[] = $row;
         }
 
-        // Count total results for pagination
-        $countQuery = "SELECT COUNT(*) as total FROM quran WHERE " . implode(" OR ", $conditions);
-        try {
-            $countStmt = $conn->prepare($countQuery);
-            if ($params) {
-                $countStmt->bind_param($types, ...$params);
-            }
-            $countStmt->execute();
-            $totalResults = $countStmt->get_result()->fetch_assoc()['total'];
-            $countStmt->close();
-
-            // Main query with pagination
-            $query = "SELECT surah, ayat, text, english_translation 
-                      FROM quran 
-                      WHERE " . implode(" OR ", $conditions) . "
-                      LIMIT ? OFFSET ?";
-            
-            $stmt = $conn->prepare($query);
-            
-            // Add pagination parameters
-            $types .= 'ii';
-            $params[] = $resultsPerPage;
-            $params[] = $offset;
-            
-            $stmt->bind_param($types, ...$params);
-            $stmt->execute();
-            $result = $stmt->get_result();
-
-            while ($row = $result->fetch_assoc()) {
-                // Highlight keywords in English translation
-                $highlightedTranslation = $row['english_translation'];
-                foreach ($keywordsArray as $keyword) {
-                    $highlightedTranslation = preg_replace(
-                        '/(' . preg_quote($keyword, '/') . ')/i',
-                        '<span class="highlight">$1</span>',
-                        $highlightedTranslation
-                    );
-                }
-                $row['highlighted_translation'] = $highlightedTranslation;
-                $results[] = $row;
-            }
-
-            $stmt->close();
-        } catch (mysqli_sql_exception $e) {
-            $error = "An error occurred while searching. Error: " . $e->getMessage();
-        }
+        $stmt->close();
+    } catch (mysqli_sql_exception $e) {
+        $error = "An error occurred while searching. Error: " . $e->getMessage();
     }
 }
 
@@ -230,23 +228,32 @@ function toggleSidebar() {
             </div>
         <?php endforeach; ?>
         
-<?php if ($totalPages > 1): ?>
+        <?php if ($totalPages > 1): ?>
     <div class="pagination">
-        <?php if ($currentPage > 1): ?>
+        <?php
+        // Determine the range of pages to display
+        $start = max(1, $currentPage - 2);
+        $end = min($totalPages, $currentPage + 2);
+
+        // Display 'Previous' link if on pages after the first
+        if ($currentPage > 1): ?>
             <a href="?keywords=<?php echo urlencode($keywords); ?>&page=<?php echo ($currentPage - 1); ?>">Previous</a>
         <?php endif; ?>
-        
-        <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+
+        <!-- Display page numbers -->
+        <?php for ($i = $start; $i <= $end; $i++): ?>
             <a href="?keywords=<?php echo urlencode($keywords); ?>&page=<?php echo $i; ?>" class="<?php echo ($i === $currentPage) ? 'active' : ''; ?>">
                 <?php echo $i; ?>
             </a>
         <?php endfor; ?>
-        
+
+        <!-- Display 'Next' link if on pages before the last -->
         <?php if ($currentPage < $totalPages): ?>
             <a href="?keywords=<?php echo urlencode($keywords); ?>&page=<?php echo ($currentPage + 1); ?>">Next</a>
         <?php endif; ?>
     </div>
 <?php endif; ?>
+
 
     <?php elseif ($_SERVER['REQUEST_METHOD'] === 'POST'): ?>
         <p>No results found for the given keywords.</p>
