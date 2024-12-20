@@ -443,8 +443,8 @@ $pending_status = $row_status['status_count'];
 
                 <?php
                 // Show page numbers with ellipsis for large number of pages
-                $start = max(1, $page - 2);
-                $end = min($total_pages, $page + 2);
+                $start = max(1, $page - 1);
+                $end = min($total_pages, $page + 1);
 
                 for ($i = $start; $i <= $end; $i++): ?>
                     <?php if ($i == $page): ?>

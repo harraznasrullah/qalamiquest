@@ -26,12 +26,20 @@ if (isset($_GET['action']) && $_GET['action'] === 'add_proposal') {
 }
 
 // Pagination setup
-$results_per_page = 5; // Number of proposals per page
-$page = isset($_GET['page']) ? (int) $_GET['page'] : 1; // Current page number
-$page = max(1, $page); // Ensure page is at least 1
-
-// Calculate offset
+$results_per_page = 5;
+$page = isset($_GET['page']) ? intval($_GET['page']) : 1;
 $offset = ($page - 1) * $results_per_page;
+
+// Total proposals count
+$total_query = "SELECT COUNT(*) as total 
+                FROM proposals p
+                JOIN users u ON p.user_id = u.id 
+                WHERE p.approval_date IS NOT NULL 
+                AND u.title = 'student'";
+$total_result = $conn->query($total_query);
+$total_row = $total_result->fetch_assoc();
+$total_proposals = $total_row['total'];
+$total_pages = ceil($total_proposals / $results_per_page);
 
 // Fetch total number of proposals
 $userId = $_SESSION['user_id'];
@@ -86,43 +94,39 @@ $stmt->close();
             margin-right: 5px;
         }
 
+        /* Pagination Styles */
         .pagination {
             display: flex;
             justify-content: center;
             align-items: center;
             margin-top: 20px;
-            user-select: none;
             gap: 10px;
-            /* This replaces margin and prevents line breaks */
-            flex-wrap: wrap;
-            /* Allows wrapping on smaller screens */
         }
 
-        .pagination-btn {
-            background-color: #f0f0f0;
+        .pagination a,
+        .pagination span {
+            padding: 8px 12px;
             border: 1px solid #ddd;
-            color: #333;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
+            color: #007bff;
             text-decoration: none;
-            /* Remove underline from links */
+            border-radius: 4px;
             transition: all 0.3s ease;
         }
 
-        .pagination-btn:hover:not(.pagination-btn-disabled) {
-            background-color: #e0e0e0;
+        .pagination a:hover {
+            background-color: #f0f0f0;
         }
 
-        .pagination-btn-current {
+        .pagination .current {
             background-color: #007bff;
             color: white;
-            pointer-events: none;
+            border-color: #007bff;
         }
 
-        .pagination-btn-disabled {
-            color: #cccccc;
-            cursor: not-allowed;
+        .pagination .disabled {
+            color: #6c757d;
+            pointer-events: none;
+            opacity: 0.6;
         }
     </style>
 </head>
@@ -238,39 +242,33 @@ $stmt->close();
                 </tbody>
             </table>
 
-            <!-- Pagination Section -->
+           <!-- Pagination -->
             <div class="pagination">
                 <?php if ($page > 1): ?>
-                    <a href="?page=1" class="pagination-btn">First</a>
-                    <a href="?page=<?php echo $page - 1; ?>" class="pagination-btn">Previous</a>
-                <?php else: ?>
-                    <span class="pagination-btn pagination-btn-disabled">First</span>
-                    <span class="pagination-btn pagination-btn-disabled">Previous</span>
+                    <a href="?page=1">First</a>
+                    <a href="?page=<?php echo $page - 1; ?>">Previous</a>
                 <?php endif; ?>
 
                 <?php
-                // Show page numbers
-                $start = max(1, $page - 2);
-                $end = min($total_pages, $page + 2);
+                // Show page numbers with ellipsis for large number of pages
+                $start = max(1, $page - 1);
+                $end = min($total_pages, $page + 1);
 
                 for ($i = $start; $i <= $end; $i++): ?>
                     <?php if ($i == $page): ?>
-                        <span class="pagination-btn pagination-btn-current"><?php echo $i; ?></span>
+                        <span class="current"><?php echo $i; ?></span>
                     <?php else: ?>
-                        <a href="?page=<?php echo $i; ?>" class="pagination-btn"><?php echo $i; ?></a>
+                        <a href="?page=<?php echo $i; ?>"><?php echo $i; ?></a>
                     <?php endif; ?>
                 <?php endfor; ?>
 
                 <?php if ($page < $total_pages): ?>
-                    <a href="?page=<?php echo $page + 1; ?>" class="pagination-btn">Next</a>
-                    <a href="?page=<?php echo $total_pages; ?>" class="pagination-btn">Last</a>
-                <?php else: ?>
-                    <span class="pagination-btn pagination-btn-disabled">Next</span>
-                    <span class="pagination-btn pagination-btn-disabled">Last</span>
+                    <a href="?page=<?php echo $page + 1; ?>">Next</a>
+                    <a href="?page=<?php echo $total_pages; ?>">Last</a>
                 <?php endif; ?>
             </div>
         </div>
-    </div>
+
 
     <!-- Previous JavaScript remains the same -->
     <script>
