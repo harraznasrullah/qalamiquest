@@ -12,11 +12,14 @@ $totalResults = 0;
 
 $user_name = strtoupper($_SESSION['user_name']); // Retrieve from session after login
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Handle keywords from input
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!empty($_POST['keywords'])) {
         $keywords = $_POST['keywords'];
     }
+} elseif (isset($_GET['keywords'])) {
+    $keywords = $_GET['keywords'];
+}
+{
 
     // Handle file upload
     if (isset($_FILES['keywords_file']) && $_FILES['keywords_file']['error'] === UPLOAD_ERR_OK) {
@@ -190,12 +193,12 @@ function toggleSidebar() {
             <div class="search-container">
                 <!-- Text Input for Keywords -->
                 <input type="text" 
-                       id="keywords"
-                       name="keywords" 
-                       class="search-input"
-                       placeholder="Example: peace, mercy, blessing" 
-                       value="<?php echo htmlspecialchars($keywords); ?>" 
-                       oninput="updateKeywordCount()">
+                        id="keywords"
+                        name="keywords" 
+                        class="search-input"
+                        placeholder="Example: peace, mercy, blessing" 
+                        value="<?php echo htmlspecialchars($keywords); ?>" 
+                        oninput="updateKeywordCount()">
                 <!-- File Upload Input -->
                 <input type="file" name="keywords_file" accept=".txt">
                 <div class="keyword-tags" id="keywordTags"></div>
@@ -227,23 +230,24 @@ function toggleSidebar() {
             </div>
         <?php endforeach; ?>
         
-        <?php if ($totalPages > 1): ?>
-            <div class="pagination">
-                <?php if ($currentPage > 1): ?>
-                    <a href="?keywords=<?php echo urlencode($keywords); ?>&page=<?php echo ($currentPage - 1); ?>">Previous</a>
-                <?php endif; ?>
-                
-                <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                    <a href="?keywords=<?php echo urlencode($keywords); ?>&page=<?php echo $i; ?>" class="<?php echo ($i === $currentPage) ? 'active' : ''; ?>">
-                        <?php echo $i; ?>
-                    </a>
-                <?php endfor; ?>
-
-                <?php if ($currentPage < $totalPages): ?>
-                    <a href="?keywords=<?php echo urlencode($keywords); ?>&page=<?php echo ($currentPage + 1); ?>">Next</a>
-                <?php endif; ?>
-            </div>
+<?php if ($totalPages > 1): ?>
+    <div class="pagination">
+        <?php if ($currentPage > 1): ?>
+            <a href="?keywords=<?php echo urlencode($keywords); ?>&page=<?php echo ($currentPage - 1); ?>">Previous</a>
         <?php endif; ?>
+        
+        <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+            <a href="?keywords=<?php echo urlencode($keywords); ?>&page=<?php echo $i; ?>" class="<?php echo ($i === $currentPage) ? 'active' : ''; ?>">
+                <?php echo $i; ?>
+            </a>
+        <?php endfor; ?>
+        
+        <?php if ($currentPage < $totalPages): ?>
+            <a href="?keywords=<?php echo urlencode($keywords); ?>&page=<?php echo ($currentPage + 1); ?>">Next</a>
+        <?php endif; ?>
+    </div>
+<?php endif; ?>
+
     <?php elseif ($_SERVER['REQUEST_METHOD'] === 'POST'): ?>
         <p>No results found for the given keywords.</p>
     <?php endif; ?>
