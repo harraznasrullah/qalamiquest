@@ -284,6 +284,54 @@ function validateKeywords() {
     }
     return true;
 }
+// Update this part in your JavaScript code
+document.addEventListener('DOMContentLoaded', function() {
+            const bookmarkButtons = document.querySelectorAll('.bookmark-btn');
+            bookmarkButtons.forEach(button => {
+                button.addEventListener('click', async function() {
+                    const surah = this.dataset.surah;
+                    const ayat = this.dataset.ayat;
+                    const text = this.dataset.text;
+                    const translation = this.dataset.translation;
+                    
+                    try {
+                        const formData = new FormData();
+                        formData.append('surah', surah);
+                        formData.append('ayat', ayat);
+                        formData.append('text', text);
+                        formData.append('translation', translation);
+                        
+                        const response = await fetch('./bookmark/bookmarks.php', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        console.log('Response status:', response.status);
+                        console.log('Response headers:', response.headers);
+                        
+                        const responseText = await response.text(); // First, get raw text
+                        console.log('Raw response:', responseText);
+                        
+                        try {
+                            const data = JSON.parse(responseText); // Then try to parse
+                            if (data.success) {
+                                alert('Bookmark saved successfully!');
+                            } else {
+                                alert(data.message || 'Failed to save bookmark');
+                            }
+                        } catch (parseError) {
+                            console.error('JSON Parse Error:', parseError);
+                            console.error('Unparseable response:', responseText);
+                            alert('Server returned an invalid response');
+                        }
+                    } catch (error) {
+                        console.error('Fetch Error:', error);
+                        alert('An error occurred while saving the bookmark');
+                    }
+                });
+            });
+        });
+
 </script>
 
 </body>
