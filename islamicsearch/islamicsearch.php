@@ -7,12 +7,15 @@ $resultsPerPage = 5;
 $currentPage = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $offset = ($currentPage - 1) * $resultsPerPage;
 $totalResults = 0;
+$searchType = isset($_POST['search_type']) ? $_POST['search_type'] : (isset($_SESSION['search_type']) ? $_SESSION['search_type'] : 'quran');
+
+// Store the selected type in the session
+$_SESSION['search_type'] = $searchType;
+
 $user_name = strtoupper($_SESSION['user_name']);
 $keywordsArray = []; // Initialize keywords array
 
-$user_name = strtoupper($_SESSION['user_name']);
-
-// Keyword Handling Logic (Improved)
+// Keyword Handling Logic
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!empty($_POST['keywords'])) {
         $keywords = $_POST['keywords'];
@@ -37,11 +40,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $keywordsArray = $_SESSION['keywords_array'];
 }
 
-// Database Query (Improved with check for empty $conditions)
+// Database Query
 if (count($keywordsArray) > 5) {
     $error = "Please enter up to 5 keywords only.";
 } else {
-    if (!empty($keywordsArray)) { // Crucial check to prevent SQL errors
+    if (!empty($keywordsArray)) {
         $conditions = [];
         $params = [];
         $types = '';
@@ -52,18 +55,19 @@ if (count($keywordsArray) > 5) {
             $types .= 's';
         }
 
+        $tableName = ($searchType === 'hadith') ? 'hadith' : 'quran'; // Determine the table to query
+
         $whereClause = "WHERE " . implode(" OR ", $conditions);
 
-        $countQuery = "SELECT COUNT(*) as total FROM quran " . $whereClause;
+        $countQuery = "SELECT COUNT(*) as total FROM $tableName " . $whereClause;
         try {
             $countStmt = $conn->prepare($countQuery);
-            $countStmt->bind_param($types, ...$params); // Use splat operator
+            $countStmt->bind_param($types, ...$params);
             $countStmt->execute();
             $totalResults = $countStmt->get_result()->fetch_assoc()['total'];
             $countStmt->close();
 
-            $query = "SELECT surah, ayat, text, english_translation FROM quran " . $whereClause . " LIMIT ? OFFSET ?";
-
+            $query = "SELECT * FROM $tableName " . $whereClause . " LIMIT ? OFFSET ?";
             $stmt = $conn->prepare($query);
             $types .= 'ii';
             $params[] = $resultsPerPage;
@@ -118,12 +122,7 @@ function extractKeywordsFromFile($content) {
     // Extract top 5 frequent words
     $topWords = array_slice(array_keys($wordCounts), 0, 5);
 
-    // Extract only nouns and adjectives (basic approach using regex for demonstration purposes)
-    $nounsAndAdjectives = array_filter($topWords, function($word) {
-        return preg_match('/\b\w{3,}\b/', $word); // Simple rule: words with at least 3 characters
-    });
-
-    return implode(',', $nounsAndAdjectives);
+    return implode(',', $topWords);
 }
 ?>
 
@@ -142,7 +141,6 @@ function extractKeywordsFromFile($content) {
     }
 </style>
 <body>
-
 <!-- Navbar -->
 <div class="navbar">
     <div class="navbar-left">
@@ -193,21 +191,63 @@ function toggleSidebar() {
                 <?php if (isset($error)): ?>
                     <div class="error-message"><?php echo $error; ?></div>
                 <?php endif; ?>
+                 <!-- Radio Buttons for Search Type -->
+                <form method="POST" action="">
+                    <label>
+                        <input type="radio" name="search_type" value="quran" <?php echo $searchType === 'quran' ? 'checked' : ''; ?>>
+                        Quran
+                    </label>
+                    <label>
+                        <input type="radio" name="search_type" value="hadith" <?php echo $searchType === 'hadith' ? 'checked' : ''; ?>>
+                        Hadith
+                    </label>
+                </form>
                 <button class="search" type="submit">Search</button>
             </div>
         </form>
         
         <div class="results">
-            <?php if (!empty($results)): ?>
-                <p>Found a total of <?php echo $totalResults; ?> ayat.</p>
-                <?php foreach ($results as $result): ?>
-                    <div>
-                        <strong>Surah <?php echo $result['surah']; ?>, Ayat <?php echo $result['ayat']; ?></strong><br>
-                        <?php echo $result['text']; ?><br>
-                        <?php echo $result['highlighted_translation']; ?>
-                        <button class="bookmark-btn" data-surah="<?php echo $result['surah']; ?>" data-ayat="<?php echo $result['ayat']; ?>" data-text="<?php echo htmlspecialchars($result['text'], ENT_QUOTES); ?>" data-translation="<?php echo htmlspecialchars($result['english_translation'], ENT_QUOTES); ?>">Bookmark</button>
-                    </div><hr>
-                <?php endforeach; ?>
+    <?php
+    // Function to highlight keywords in the text
+    function highlight_keywords($text, $keywords) {
+        foreach ($keywords as $keyword) {
+            // Use a regular expression to find whole words (case-insensitive)
+            $text = preg_replace('/\b(' . preg_quote($keyword, '/') . ')\b/i', '<span class="highlight">$1</span>', $text);
+        }
+        return $text;
+    }
+
+    // Get the search keywords (from GET or POST request)
+    $keywords = isset($_GET['keywords']) ? explode(',', $_GET['keywords']) : []; // Adjust based on your input method
+    ?>
+
+    <?php if (!empty($results)): ?>
+        <p>Found a total of <?php echo $totalResults; ?> results.</p>
+        <?php foreach ($results as $result): ?>
+            <div>
+                <?php if ($searchType === 'quran'): ?>
+                    <strong>Surah <?php echo $result['surah'] ?? 'N/A'; ?>, Ayat <?php echo $result['ayat'] ?? 'N/A'; ?></strong><br>
+                    <?php 
+                    // Highlight keywords in the Quran text
+                    $highlightedText = highlight_keywords($result['text'] ?? '', $keywords);
+                    echo $highlightedText; 
+                    ?><br>
+                    <p><strong>English Translation:</strong> <?php echo highlight_keywords($result['english_translation'] ?? 'N/A', $keywords); ?></p>
+                <?php elseif ($searchType === 'hadith'): ?>
+                    <strong>Hadith Reference: <?php echo $result['reference'] ?? 'N/A'; ?></strong><br>
+                    <p><strong>Arabic Text:</strong> <?php echo highlight_keywords($result['arabic_text'] ?? 'N/A', $keywords); ?></p>
+                    <p><strong>English Translation:</strong> <?php echo highlight_keywords($result['english_translation'] ?? 'N/A', $keywords); ?></p>
+                <?php endif; ?>
+                <button class="bookmark-btn" 
+                        data-surah="<?php echo $result['surah'] ?? ''; ?>" 
+                        data-ayat="<?php echo $result['ayat'] ?? ''; ?>" 
+                        data-text="<?php echo htmlspecialchars($result['text'] ?? '', ENT_QUOTES); ?>" 
+                        data-translation="<?php echo htmlspecialchars($result['english_translation'] ?? '', ENT_QUOTES); ?>">
+                    Bookmark
+                </button>
+            </div>
+            <hr>
+        <?php endforeach; ?>
 
         <?php
         $paginationKeywords = implode(",", $keywordsArray); // Crucial for file uploads
@@ -231,7 +271,11 @@ function toggleSidebar() {
             </div>
         <?php endif; ?>
 
-    <?php elseif ($_SERVER['REQUEST_METHOD'] === 'POST'): ?>
+    <?php else: ?>
+        <p>No results found.</p>
+    <?php endif; ?>
+
+    <?php if ($_SERVER['REQUEST_METHOD'] === 'POST'): ?>
         <p>No results found for the given keywords.</p>
     <?php endif; ?>
 </div>
