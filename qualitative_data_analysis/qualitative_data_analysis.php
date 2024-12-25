@@ -30,9 +30,9 @@ $sections = [
         'status' => isset($progress['data_analysis']) ? $progress['data_analysis'] : 'pending'
     ],
     [
-        'key' => 'generating_themes',
+        'key' => 'themes',
         'title' => 'Generating Themes',
-        'status' => isset($progress['generating_themes']) ? $progress['generating_themes'] : 'pending'
+        'status' => isset($progress['themes']) ? $progress['themes'] : 'pending'
     ]
 ];
 
