@@ -222,7 +222,7 @@ $result = $stmt->get_result();
 </head>
 <body>
     <div class="container">
-        <h1>Supervisor Requests</h1>
+        <h1>Student Requests</h1>
         <?php if (!empty($message)): ?>
             <div class="message"><?php echo htmlspecialchars($message); ?></div>
         <?php endif; ?>
