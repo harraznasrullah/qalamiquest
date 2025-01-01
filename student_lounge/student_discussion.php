@@ -132,7 +132,7 @@ $result = $conn->query("
 
     <!-- Main Content -->
     <div id="main-content">
-        <h1>Student Lounge</h1>
+        <h1>Student Hub</h1>
 
         <!-- Search Form -->
         <form method="GET" action="student_discussion.php" class="search-form">
