@@ -214,7 +214,7 @@ $_SESSION['proposal']['step5_completed'] = true;
     <script>
         // Add new interview question
         function addInterviewQuestion(researchIndex) {
-            const container = document.querySelector(`.interview-questions-container[data-research-index="${researchIndex}"]`);
+            const container = document.querySelector(.interview-questions-container[data-research-index="${researchIndex}"]);
             const newQuestion = document.createElement('div');
             newQuestion.classList.add('interview-question');
             newQuestion.innerHTML = `
