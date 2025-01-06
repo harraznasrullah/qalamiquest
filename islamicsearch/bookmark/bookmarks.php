@@ -18,30 +18,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $surah = $_POST['surah'] ?? null;
         $ayat = $_POST['ayat'] ?? null;
-        $text = $_POST['text'] ?? null;
+        $reference = $_POST['reference'] ?? null;
+        $arabic_text = $_POST['arabic_text'] ?? null;
+        $text = $_POST['text'] ?? null; // Ensure this is set correctly
         $translation = $_POST['translation'] ?? null;
 
-        if (!$surah || !$ayat || !$text || !$translation) {
+        // Debug: Log the received data
+        error_log("Received data - Surah: $surah, Ayat: $ayat, Reference: $reference, Arabic Text: $arabic_text, Text: $text, Translation: $translation");
+
+        if ((!$surah || !$ayat) && (!$reference || !$arabic_text)) {
             echo json_encode(['success' => false, 'message' => 'Invalid input data']);
             exit;
         }
 
-        // Check if bookmark already exists
-        $checkQuery = "SELECT id FROM bookmarks WHERE user_id = ? AND surah = ? AND ayat = ?";
-        $checkStmt = $conn->prepare($checkQuery);
-        $checkStmt->bind_param('iii', $user_id, $surah, $ayat);
-        $checkStmt->execute();
-        $result = $checkStmt->get_result();
+        // Check if the bookmark already exists
+        if ($surah && $ayat) {
+            // Quran bookmark
+            $checkQuery = "SELECT id FROM bookmarks WHERE user_id = ? AND surah = ? AND ayat = ?";
+            $checkStmt = $conn->prepare($checkQuery);
+            $checkStmt->bind_param('iis', $user_id, $surah, $ayat);
+        } else {
+            // Hadith bookmark
+            $checkQuery = "SELECT id FROM bookmarks WHERE user_id = ? AND reference = ?";
+            $checkStmt = $conn->prepare($checkQuery);
+            $checkStmt->bind_param('is', $user_id, $reference);
+        }
 
-        if ($result->num_rows > 0) {
-            echo json_encode(['success' => false, 'message' => 'Bookmark already exists']);
+        $checkStmt->execute();
+        $checkStmt->store_result();
+
+        if ($checkStmt->num_rows > 0) {
+            // Bookmark already exists
+            echo json_encode(['success' => false, 'message' => 'You already bookmarked this']);
+            $checkStmt->close();
             exit;
         }
 
+        $checkStmt->close();
+
         // Insert new bookmark
-        $query = "INSERT INTO bookmarks (user_id, surah, ayat, text, english_translation) VALUES (?, ?, ?, ?, ?)";
-        $stmt = $conn->prepare($query);
-        $stmt->bind_param('iisss', $user_id, $surah, $ayat, $text, $translation);
+        if ($surah && $ayat) {
+            // Quran bookmark
+            $query = "INSERT INTO bookmarks (user_id, surah, ayat, text, english_translation) VALUES (?, ?, ?, ?, ?)";
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param('iisss', $user_id, $surah, $ayat, $text, $translation);
+        } else {
+            // Hadith bookmark
+            $query = "INSERT INTO bookmarks (user_id, reference, arabic_text, text, english_translation) VALUES (?, ?, ?, ?, ?)";
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param('issss', $user_id, $reference, $arabic_text, $text, $translation);
+        }
 
         if ($stmt->execute()) {
             echo json_encode(['success' => true, 'message' => 'Bookmark saved successfully']);
@@ -59,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Handle GET request (Displaying bookmarks)
 else if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     try {
-        $query = "SELECT id, surah, ayat, text, english_translation, created_at FROM bookmarks WHERE user_id = ?";
+        $query = "SELECT id, surah, ayat, reference, arabic_text, text, english_translation, created_at FROM bookmarks WHERE user_id = ?";
         $stmt = $conn->prepare($query);
         $stmt->bind_param('i', $user_id);
         $stmt->execute();

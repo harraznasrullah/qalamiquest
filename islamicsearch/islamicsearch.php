@@ -50,8 +50,9 @@ if (count($keywordsArray) > 5) {
         $types = '';
 
         foreach ($keywordsArray as $keyword) {
-            $conditions[] = "english_translation LIKE ?";
-            $params[] = "%$keyword%";
+            // Use REGEXP to match whole words only
+            $conditions[] = "english_translation REGEXP ?";
+            $params[] = "[[:<:]]" . $keyword . "[[:>:]]"; // Word boundaries for MySQL
             $types .= 's';
         }
 
@@ -77,11 +78,13 @@ if (count($keywordsArray) > 5) {
             $result = $stmt->get_result();
 
             while ($row = $result->fetch_assoc()) {
-                $highlightedTranslation = $row['english_translation'];
-                foreach ($keywordsArray as $keyword) {
-                    $highlightedTranslation = preg_replace('/(' . preg_quote($keyword, '/') . ')/i', '<span class="highlight">$1</span>', $highlightedTranslation);
+                // Highlight keywords in the text and translation
+                if ($searchType === 'quran') {
+                    $row['text'] = highlight_keywords($row['text'], $keywordsArray);
+                } elseif ($searchType === 'hadith') {
+                    $row['arabic_text'] = highlight_keywords($row['arabic_text'], $keywordsArray);
                 }
-                $row['highlighted_translation'] = $highlightedTranslation;
+                $row['english_translation'] = highlight_keywords($row['english_translation'], $keywordsArray);
                 $results[] = $row;
             }
             $stmt->close();
@@ -124,6 +127,15 @@ function extractKeywordsFromFile($content) {
 
     return implode(',', $topWords);
 }
+
+// Function to highlight keywords in the text
+function highlight_keywords($text, $keywords) {
+    foreach ($keywords as $keyword) {
+        // Use a regular expression to find whole words (case-insensitive)
+        $text = preg_replace('/\b(' . preg_quote($keyword, '/') . ')\b/i', '<span class="highlight">$1</span>', $text);
+    }
+    return $text;
+}
 ?>
 
 <!DOCTYPE html>
@@ -136,6 +148,10 @@ function extractKeywordsFromFile($content) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <style>
+    .highlight {
+        background-color: yellow;
+        font-weight: bold;
+    }
     .bookmark-btn {
         margin-top: 15px;
     }
@@ -209,48 +225,39 @@ function toggleSidebar() {
         </form>
         
         <div class="results">
-    <?php
-    // Function to highlight keywords in the text
-    function highlight_keywords($text, $keywords) {
-        foreach ($keywords as $keyword) {
-            // Use a regular expression to find whole words (case-insensitive)
-            $text = preg_replace('/\b(' . preg_quote($keyword, '/') . ')\b/i', '<span class="highlight">$1</span>', $text);
-        }
-        return $text;
-    }
-
-    // Get the search keywords (from GET or POST request)
-    $keywords = isset($_GET['keywords']) ? explode(',', $_GET['keywords']) : []; // Adjust based on your input method
-    ?>
-
     <?php if (!empty($results)): ?>
         <p>Found a total of <?php echo $totalResults; ?> results.</p>
         <?php foreach ($results as $result): ?>
             <div>
                 <?php if ($searchType === 'quran'): ?>
                     <strong>Surah <?php echo $result['surah'] ?? 'N/A'; ?>, Ayat <?php echo $result['ayat'] ?? 'N/A'; ?></strong><br>
-                    <?php 
-                    // Highlight keywords in the Quran text
-                    $highlightedText = highlight_keywords($result['text'] ?? '', $keywords);
-                    echo $highlightedText; 
-                    ?><br>
-                    <p><strong>English Translation:</strong> <?php echo highlight_keywords($result['english_translation'] ?? 'N/A', $keywords); ?></p>
+                    <?php echo $result['text']; ?><br>
+                    <p><strong>English Translation:</strong> <?php echo $result['english_translation']; ?></p>
+                    <button class="bookmark-btn" 
+                            data-surah="<?php echo $result['surah'] ?? ''; ?>" 
+                            data-ayat="<?php echo $result['ayat'] ?? ''; ?>" 
+                            data-text="<?php echo htmlspecialchars($result['text'] ?? '', ENT_QUOTES); ?>" 
+                            data-translation="<?php echo htmlspecialchars($result['english_translation'] ?? '', ENT_QUOTES); ?>">
+                        Bookmark
+                    </button>
                 <?php elseif ($searchType === 'hadith'): ?>
                     <strong>Hadith Reference: <?php echo $result['reference'] ?? 'N/A'; ?></strong><br>
-                    <p><strong>Arabic Text:</strong> <?php echo highlight_keywords($result['arabic_text'] ?? 'N/A', $keywords); ?></p>
-                    <p><strong>English Translation:</strong> <?php echo highlight_keywords($result['english_translation'] ?? 'N/A', $keywords); ?></p>
+                    <p><strong>Arabic Text:</strong> <?php echo $result['arabic_text']; ?></p>
+                    <p><strong>English Translation:</strong> <?php echo $result['english_translation']; ?></p>
+                    <!-- Single Bookmark Button for Hadith -->
+                    <button class="bookmark-btn" 
+                            data-reference="<?php echo $result['reference'] ?? ''; ?>" 
+                            data-arabic-text="<?php echo htmlspecialchars($result['arabic_text'] ?? '', ENT_QUOTES); ?>" 
+                            data-text="<?php echo htmlspecialchars($result['arabic_text'] ?? '', ENT_QUOTES); ?>" 
+                            data-translation="<?php echo htmlspecialchars($result['english_translation'] ?? '', ENT_QUOTES); ?>">
+                        Bookmark
+                    </button>
                 <?php endif; ?>
-                <button class="bookmark-btn" 
-                        data-surah="<?php echo $result['surah'] ?? ''; ?>" 
-                        data-ayat="<?php echo $result['ayat'] ?? ''; ?>" 
-                        data-text="<?php echo htmlspecialchars($result['text'] ?? '', ENT_QUOTES); ?>" 
-                        data-translation="<?php echo htmlspecialchars($result['english_translation'] ?? '', ENT_QUOTES); ?>">
-                    Bookmark
-                </button>
             </div>
             <hr>
         <?php endforeach; ?>
 
+        <!-- Pagination Section -->
         <?php
         $paginationKeywords = implode(",", $keywordsArray); // Crucial for file uploads
         if ($totalPages > 1): ?>
@@ -272,20 +279,15 @@ function toggleSidebar() {
                 <?php endif; ?>
             </div>
         <?php endif; ?>
-
     <?php else: ?>
         <p>No results found.</p>
-    <?php endif; ?>
-
-    <?php if ($_SERVER['REQUEST_METHOD'] === 'POST'): ?>
-        <p>No results found for the given keywords.</p>
     <?php endif; ?>
 </div>
 
 <script>
 function updateKeywordCount() {
     const keywordsInput = document.getElementById('keywords');
-    const keywordTags = document.getElementById('keywordTags');
+    const keywordTags = document.getElementById('keywordTags");
     const keywordCount = document.getElementById('keywordCount');
     
     const keywords = keywordsInput.value.split(',').map(kw => kw.trim()).filter(kw => kw);
@@ -303,51 +305,58 @@ function validateKeywords() {
 }
 // Update this part in your JavaScript code
 document.addEventListener('DOMContentLoaded', function() {
-            const bookmarkButtons = document.querySelectorAll('.bookmark-btn');
-            bookmarkButtons.forEach(button => {
-                button.addEventListener('click', async function() {
-                    const surah = this.dataset.surah;
-                    const ayat = this.dataset.ayat;
-                    const text = this.dataset.text;
-                    const translation = this.dataset.translation;
-                    
-                    try {
-                        const formData = new FormData();
-                        formData.append('surah', surah);
-                        formData.append('ayat', ayat);
-                        formData.append('text', text);
-                        formData.append('translation', translation);
-                        
-                        const response = await fetch('./bookmark/bookmarks.php', {
-                            method: 'POST',
-                            body: formData
-                        });
-                        
-                        console.log('Response status:', response.status);
-                        console.log('Response headers:', response.headers);
-                        
-                        const responseText = await response.text(); // First, get raw text
-                        console.log('Raw response:', responseText);
-                        
-                        try {
-                            const data = JSON.parse(responseText); // Then try to parse
-                            if (data.success) {
-                                alert('Bookmark saved successfully!');
-                            } else {
-                                alert(data.message || 'Failed to save bookmark');
-                            }
-                        } catch (parseError) {
-                            console.error('JSON Parse Error:', parseError);
-                            console.error('Unparseable response:', responseText);
-                            alert('Server returned an invalid response');
-                        }
-                    } catch (error) {
-                        console.error('Fetch Error:', error);
-                        alert('An error occurred while saving the bookmark');
-                    }
+    const bookmarkButtons = document.querySelectorAll('.bookmark-btn');
+    bookmarkButtons.forEach(button => {
+        button.addEventListener('click', async function() {
+            const surah = this.dataset.surah;
+            const ayat = this.dataset.ayat;
+            const reference = this.dataset.reference;
+            const arabicText = this.dataset.arabicText;
+            const text = this.dataset.text; // Ensure this is set correctly
+            const translation = this.dataset.translation;
+            
+            try {
+                const formData = new FormData();
+                if (surah && ayat) {
+                    // Quran bookmark
+                    formData.append('surah', surah);
+                    formData.append('ayat', ayat);
+                    formData.append('text', text);
+                } else if (reference) {
+                    // Hadith bookmark
+                    formData.append('reference', reference);
+                    formData.append('arabic_text', arabicText);
+                    formData.append('text', text); // Ensure text is passed for Hadith
+                }
+                formData.append('translation', translation);
+                
+                const response = await fetch('./bookmark/bookmarks.php', {
+                    method: 'POST',
+                    body: formData
                 });
-            });
+                
+                const responseText = await response.text();
+                console.log('Raw response:', responseText);
+                
+                try {
+                    const data = JSON.parse(responseText);
+                    if (data.success) {
+                        alert('Bookmark saved successfully!');
+                    } else {
+                        alert(data.message || 'Failed to save bookmark');
+                    }
+                } catch (parseError) {
+                    console.error('JSON Parse Error:', parseError);
+                    console.error('Unparseable response:', responseText);
+                    alert('Server returned an invalid response');
+                }
+            } catch (error) {
+                console.error('Fetch Error:', error);
+                alert('An error occurred while saving the bookmark');
+            }
         });
+    });
+});
 
 </script>
 
