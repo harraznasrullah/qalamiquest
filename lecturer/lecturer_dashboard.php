@@ -40,11 +40,12 @@ $total_proposals = $total_row['total'];
 $total_pages = ceil($total_proposals / $results_per_page);
 
 // Modify the main query to exclude archived proposals
-$query = "SELECT p.proposal_id, p.title, p.approval_date, p.status, u.fullname AS student_name
+$query = "SELECT p.proposal_id, p.title, p.approval_date, p.status, p.is_deleted, u.fullname AS student_name
           FROM proposals p
           JOIN users u ON p.user_id = u.id 
           WHERE p.approval_date IS NOT NULL 
           AND u.title = 'student'
+          AND p.is_deleted = 0
           AND (p.lecturer_visibility IS NULL OR p.lecturer_visibility = 1)
           ORDER BY p.approval_date DESC
           LIMIT ? OFFSET ?";

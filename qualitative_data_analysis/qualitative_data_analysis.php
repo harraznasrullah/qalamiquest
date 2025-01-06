@@ -71,8 +71,8 @@ if (isset($_GET['upload'])) {
 </head>
 
 <body>
-        <!-- Navbar -->
-        <div class="navbar">
+    <!-- Navbar -->
+    <div class="navbar">
         <div class="navbar-left">
             <button class="open-btn" onclick="toggleSidebar()">☰</button> <!-- Sidebar toggle button -->
             QalamiQuest
@@ -93,59 +93,61 @@ if (isset($_GET['upload'])) {
     </div>
 
     <div id="main-content">
-    <div class="container">
-        <!-- Add back button -->
-        <div class="page-header">
-            <a href="../student_dashboard.php" class="btn-back">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M15 18l-6-6 6-6" />
-                </svg>
-            </a>
-            <h1>Qualitative Data Analysis</h1>
-        </div>
+        <div class="container">
+            <!-- Add back button -->
+            <div class="page-header">
+                <a href="../student_dashboard.php" class="btn-back">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M15 18l-6-6 6-6" />
+                    </svg>
+                </a>
+                <h1>Qualitative Data Analysis</h1>
+            </div>
 
-        <div class="sections">
-            <?php foreach ($sections as $index => $section): ?>
-                <div class="section-card">
-                    <h3><?php echo $section['title']; ?></h3>
+            <div class="sections">
+                <?php foreach ($sections as $index => $section): ?>
+                    <div class="section-card">
+                        <h3><?php echo $section['title']; ?></h3>
 
-                    <div class="btn-actions">
-                        <div class="btn-actions-left">
-                            <a href="download_template.php?section=<?php echo $section['key']; ?>" class="btn-primary">
-                                Download Template
-                            </a>
+                        <div class="btn-actions">
+                            <div class="btn-actions-left">
+                                <a href="download_template.php?section=<?php echo $section['key']; ?>" class="btn-primary">
+                                    Download Template
+                                </a>
+                            </div>
+
+                            <div class="btn-actions-right">
+                                <form id="uploadForm-<?php echo $section['key']; ?>" method="POST" action="upload.php"
+                                    enctype="multipart/form-data" data-section="<?php echo $section['key']; ?>">
+                                    <input type="hidden" name="section" value="<?php echo $section['key']; ?>">
+
+                                    <!-- Hidden file input -->
+                                    <label for="file-<?php echo $section['key']; ?>" class="attach-label">Attach</label>
+                                    <input type="file" id="file-<?php echo $section['key']; ?>" name="file"
+                                        class="file-input" hidden>
+
+                                    <!-- Display file name -->
+                                    <span id="file-name-<?php echo $section['key']; ?>" class="file-name-display">No file
+                                        chosen</span>
+
+                                    <button type="button" class="submit-btn"
+                                        onclick="validateFile('<?php echo $section['key']; ?>')">
+                                        Submit
+                                    </button>
+                                </form>
+
+                            </div>
+
                         </div>
-
-                        <div class="btn-actions-right">
-                            <form id="uploadForm-<?php echo $section['key']; ?>" method="POST" action="upload.php"
-                                enctype="multipart/form-data">
-                                <input type="hidden" name="section" value="<?php echo $section['key']; ?>">
-
-                                <!-- Hidden file input -->
-                                <label for="file-<?php echo $section['key']; ?>" class="attach-label">Attach</label>
-                                <input type="file" id="file-<?php echo $section['key']; ?>" name="file" class="file-input"
-                                    hidden>
-
-                                <!-- Display file name -->
-                                <span id="file-name-<?php echo $section['key']; ?>" class="file-name-display">No file
-                                    chosen</span>
-
-                                <button type="submit" class="submit-btn">
-                                    Submit
-                                </button>
-                            </form>
-                        </div>
-
                     </div>
-                </div>
-            <?php endforeach; ?>
+                <?php endforeach; ?>
+            </div>
         </div>
-    </div>
     </div>
 
     <script>
-           function toggleSidebar() {
+        function toggleSidebar() {
             const sidebar = document.getElementById("sidebar");
             const mainContent = document.getElementById("main-content");
 
@@ -158,24 +160,24 @@ if (isset($_GET['upload'])) {
                 mainContent.style.marginLeft = "240px"; // Shift the main content
             }
         }
-        
-        document.addEventListener('DOMContentLoaded', function () {
-        // Select all file inputs
-        const fileInputs = document.querySelectorAll('.file-input');
 
-        fileInputs.forEach(input => {
-            input.addEventListener('change', function () {
-                const fileNameDisplay = document.getElementById(`file-name-${this.id.split('-')[1]}`);
-                
-                // Display file name or "No file chosen" if none is selected
-                if (this.files.length > 0) {
-                    fileNameDisplay.textContent = this.files[0].name;
-                } else {
-                    fileNameDisplay.textContent = 'No file chosen';
-                }
+        document.addEventListener('DOMContentLoaded', function () {
+            // Select all file inputs
+            const fileInputs = document.querySelectorAll('.file-input');
+
+            fileInputs.forEach(input => {
+                input.addEventListener('change', function () {
+                    const fileNameDisplay = document.getElementById(`file-name-${this.id.split('-')[1]}`);
+
+                    // Display file name or "No file chosen" if none is selected
+                    if (this.files.length > 0) {
+                        fileNameDisplay.textContent = this.files[0].name;
+                    } else {
+                        fileNameDisplay.textContent = 'No file chosen';
+                    }
+                });
             });
         });
-    });
 
         document.addEventListener('DOMContentLoaded', function () {
             const fileInputs = document.querySelectorAll('.file-input');
@@ -194,6 +196,22 @@ if (isset($_GET['upload'])) {
                 });
             });
         });
+        function validateFile(sectionKey) {
+            // Get the file input and its value
+            const fileInput = document.querySelector(`#file-${sectionKey}`);
+            const file = fileInput.files[0];
+
+            if (!file) {
+                // Display an alert if no file is selected
+                alert("No file attached. Please attach a file before submitting.");
+                return;
+            }
+
+            // If a file is selected, submit the form
+            const form = document.querySelector(`#uploadForm-${sectionKey}`);
+            form.submit();
+        }
+
     </script>
 </body>
 

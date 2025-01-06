@@ -77,18 +77,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             }
 
             if ($stmt->execute()) {
-                // Store the new proposal_id in session if inserted
                 if (!$proposal_id) {
                     $proposal_id = $stmt->insert_id;
                     $_SESSION['proposal']['proposal_id'] = $proposal_id;
                 }
-                // Redirect to dashboard or previous step
+                // Add proper redirection for all cases
                 if (isset($_POST['save_and_quit'])) {
                     header("Location: ../student_dashboard.php");
-                } else if (isset($_POST['next_step']))
+                } else if (isset($_POST['previous_step'])) {
+                    header("Location: step6.php");
+                } else if (isset($_POST['next_step'])) {
                     header("Location: step8.php");
+                }
             } else {
-                header("Location: step6.php");
+                $errors['database'] = "Error saving data: " . $stmt->error;
             }
             exit();
         } else {
