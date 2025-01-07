@@ -21,31 +21,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         return !empty(trim($obj));
     });
 
-    // Check for at least 3 objectives
-    if (count($objectives) < 3) {
+    // Validate objectives only if "Next Step" or "Save and Quit" buttons are pressed
+    if (isset($_POST['next_step']) && count($objectives) < 3) {
         $errors['objectives'] = "Please provide at least 3 objectives.";
     }
 
-    if (empty($errors)) {
+    if (empty($errors) || isset($_POST['previous_step'])) {
         // Store objectives in session
         $_SESSION['proposal']['objectives'] = $objectives;
 
-        // Get data from Step 1 and Step 2
+        // Save data to the database
+        $user_id = $_SESSION['user_id'];
+        $proposal_id = $_SESSION['proposal']['proposal_id'] ?? null;
         $title = $_SESSION['proposal']['title'];
         $introduction = $_SESSION['proposal']['introduction'];
         $problem_statement = $_SESSION['proposal']['problem_statement'];
-        $objectivesData = json_encode($objectives);  // Serialize Step 2 objectives
-
-        // Handle saving to the database
-        $user_id = $_SESSION['user_id'];
-        $proposal_id = $_SESSION['proposal']['proposal_id'] ?? null;
+        $objectivesData = json_encode($objectives); // Serialize objectives
 
         if ($proposal_id) {
             // Update existing proposal
             $stmt = $conn->prepare("UPDATE proposals SET title = ?, introduction = ?, problem_statement = ?, objectives = ?, status = 0, last_saved = NOW() WHERE proposal_id = ? AND user_id = ?");
             $stmt->bind_param("ssssii", $title, $introduction, $problem_statement, $objectivesData, $proposal_id, $user_id);
         } else {
-            // Insert a new proposal
+            // Insert new proposal
             $stmt = $conn->prepare("INSERT INTO proposals (user_id, title, introduction, problem_statement, objectives, status, last_saved) VALUES (?, ?, ?, ?, ?, 0, NOW())");
             $stmt->bind_param("issss", $user_id, $title, $introduction, $problem_statement, $objectivesData);
         }
@@ -56,18 +54,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $_SESSION['proposal']['proposal_id'] = $proposal_id;
             }
 
-            // Check which button was pressed: "Previous Step", "Next Step", or "Save and Quit"
+            // Redirect based on button clicked
             if (isset($_POST['save_and_quit'])) {
-                // Redirect to the dashboard or another page (e.g., student_dashboard.php)
                 header("Location: ../student_dashboard.php");
                 exit();
             } elseif (isset($_POST['next_step'])) {
-                // Redirect to the next step (Step 3)
                 header("Location: step3.php");
                 exit();
             } elseif (isset($_POST['previous_step'])) {
-                // Redirect to the previous step (Step 1 or Step 3)
-                header("Location: step1.php"); // You can adjust this to go to the desired step
+                header("Location: step1.php");
                 exit();
             }
         } else {
@@ -127,70 +122,59 @@ for ($i = count($savedObjectives); $i < 3; $i++) {
         </div>
 
         <form action="step2.php" method="POST" id="objectivesForm">
-            <div class="objectives-container">
-                <?php foreach ($savedObjectives as $index => $objective): ?>
-                    <div class="objective-entry">
-                        <div class="objective-header">
-                            <span class="objective-number"><?php echo $index + 1; ?></span>
-                            <label>Research Objective</label>
-                        </div>
-                        <input type="text" class="objective-input" name="objectives[]"
-                            value="<?php echo htmlspecialchars($objective); ?>"
-                            placeholder="Enter your research objective..." required>
-                        <?php if ($index >= 3): ?>
-                            <button type="button" class="remove-objective" onclick="removeObjective(this)">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        <?php endif; ?>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-
-            <button type="button" class="add-objective-btn" onclick="addObjective()">
-                <i class="fas fa-plus"></i> Add Another Objective
-            </button>
-
-            <?php if (isset($errors['objectives'])): ?>
-                <div class="error-message">
-                    <i class="fas fa-exclamation-circle"></i>
-                    <?php echo $errors['objectives']; ?>
+    <div class="objectives-container">
+        <?php foreach ($savedObjectives as $index => $objective): ?>
+            <div class="objective-entry">
+                <div class="objective-header">
+                    <span class="objective-number"><?php echo $index + 1; ?></span>
+                    <label>Research Objective</label>
                 </div>
-            <?php endif; ?>
-
-            <div class="button-group">
-                <button type="submit" class="btn btn-secondary" name="previous_step">
-                    <i class="fas fa-arrow-left"></i> Previous Step
-                </button>
-                <button type="submit" class="btn btn-primary" name="next_step">
-                    Next Step <i class="fas fa-arrow-right"></i>
-                </button>
-                <button type="submit" class="btn btn-secondary" name="save_and_quit">
-                    Save and Quit <i class="fas fa-save"></i>
-                </button>
+                <input type="text" class="objective-input" name="objectives[]"
+                    value="<?php echo htmlspecialchars($objective); ?>"
+                    placeholder="Enter your research objective..." >
+                <?php if ($index >= 3): ?>
+                    <button type="button" class="remove-objective" onclick="removeObjective(this)">
+                        <i class="fas fa-times"></i>
+                    </button>
+                <?php endif; ?>
             </div>
-        </form>
+        <?php endforeach; ?>
+    </div>
+
+    <button type="button" class="add-objective-btn" onclick="addObjective()">
+        <i class="fas fa-plus"></i> Add Another Objective
+    </button>
+
+    <?php if (isset($errors['objectives'])): ?>
+        <div class="error-message">
+            <i class="fas fa-exclamation-circle"></i>
+            <?php echo $errors['objectives']; ?>
+        </div>
+    <?php endif; ?>
+
+    <div class="button-group">
+        <button type="submit" class="btn btn-secondary" name="previous_step">
+            <i class="fas fa-arrow-left"></i> Previous Step
+        </button>
+        <button type="submit" class="btn btn-primary" name="next_step">
+            Next Step <i class="fas fa-arrow-right"></i>
+        </button>
+        <button type="submit" class="btn btn-secondary" name="save_and_quit">
+            Save and Quit <i class="fas fa-save"></i>
+        </button>
+    </div>
+</form>
     </div>
 
     <script>
-        function addObjective() {
-            const container = document.querySelector('.objectives-container');
-            const objectiveCount = container.children.length + 1;
-
-            const objectiveEntry = document.createElement('div');
-            objectiveEntry.className = 'objective-entry';
-            objectiveEntry.innerHTML = ` 
-                <div class="objective-header">
-                    <span class="objective-number">${objectiveCount}</span>
-                    <label>Research Objective</label>
-                </div>
-                <input type="text" 
-                       class="objective-input" 
-                       name="objectives[]" 
-                       placeholder="Enter your research objective..."
-                       required>
-                <button type="button" class="remove-objective" onclick="removeObjective(this)">
-                    <i class="fas fa-times"></i>
-                </button>
+        document.getElementById('objectivesForm').addEventListener('submit', function (e) {
+        const buttonClicked = document.activeElement.name; // Get the button that was clicked
+        if (buttonClicked === 'save_and_quit' || buttonClicked === 'previous_step') {
+            // Remove 'required' attribute from inputs
+            const inputs = document.querySelectorAll('.objective-input');
+            inputs.forEach(input => input.removeAttribute('required'));
+        }
+    });
             `;
 
             container.appendChild(objectiveEntry);

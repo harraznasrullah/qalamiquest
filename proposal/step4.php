@@ -17,33 +17,37 @@ if (!isset($_SESSION['proposal'])) {
 // Handle form submission for saving research questions in the session or database
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $errors = [];
-    $questions = array_filter($_POST['questions'], function ($q) {
-        return !empty(trim($q));
-    });
+    $questions = isset($_POST['questions']) ? array_filter($_POST['questions'], function ($q) {
+        return !empty(trim($q)); // Ensure empty questions are not included
+    }) : [];
 
-    // Check for exactly 2 research questions
-    if (count($questions) != 2) {
-        $errors['questions'] = "Please provide exactly 2 research questions.";
+    // Check if "Next Step" button was clicked
+    $isNextStep = isset($_POST['next_step']);
+
+    // Validate at least 2 questions are filled only for "Next Step"
+    if ($isNextStep && count($questions) < 2) {
+        $errors['questions'] = "You must fill at least 2 research questions to proceed to the next step.";
     }
 
-    // Validate each question ends with a question mark
+    // Validate questions end with a question mark
     foreach ($questions as $index => $question) {
         if (!preg_match('/\?$/', trim($question))) {
             $errors['question_' . $index] = "Question must end with a question mark";
         }
     }
 
+    // If no errors, proceed
     if (empty($errors)) {
         // Store research questions in session
         $_SESSION['proposal']['research_questions'] = $questions;
 
-        // Get data from other steps
+        // Other session data (same as before)
         $title = $_SESSION['proposal']['title'];
         $introduction = $_SESSION['proposal']['introduction'];
         $problem_statement = $_SESSION['proposal']['problem_statement'];
         $researchQuestionsData = json_encode($questions);  // Serialize research questions
 
-        // Handle saving to the database when "Save and Quit" or "Previous Step" or "Next Step" is clicked
+        // Handle saving to the database
         $user_id = $_SESSION['user_id'];
         $proposal_id = $_SESSION['proposal']['proposal_id'] ?? null;
 
@@ -68,7 +72,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 header("Location: ../student_dashboard.php");
                 exit();
             } elseif (isset($_POST['previous_step'])) {
-                // Go to Previous Step (Step 3)
+                // Clear session data for this step to avoid lingering data
+                unset($_SESSION['proposal']['research_questions']); // Clear outdated data for step4
                 header("Location: step3.php");
                 exit();
             } else {
@@ -97,11 +102,18 @@ if (!isset($_SESSION['proposal']['research_questions']) && isset($_SESSION['prop
     }
 }
 
-// Set the saved research questions from session or default to empty
+// Set the saved research questions from session or default to exactly 2 empty textareas
 $savedQuestions = $_SESSION['proposal']['research_questions'] ?? ['', ''];
-$_SESSION['proposal']['step4_completed'] = true;
+// Ensure there are exactly 2 questions
+if (count($savedQuestions) < 2) {
+    $savedQuestions = array_pad($savedQuestions, 2, '');
+} elseif (count($savedQuestions) > 2) {
+    $savedQuestions = array_slice($savedQuestions, 0, 2);
+}
 
+$_SESSION['proposal']['step4_completed'] = true;
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -109,9 +121,27 @@ $_SESSION['proposal']['step4_completed'] = true;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QalamiQuest - Research Proposal Step 4</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="proposal_style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
+<style>
+    .remove-question {
+        position: absolute;
+        right: 1rem;
+        top: 1rem;
+        color: var(--error-color);
+        background: none;
+        border: none;
+        cursor: pointer;
+        opacity: 0.7;
+        transition: opacity 0.3s ease;
+        padding: 0.5rem;
+    }
+
+    .remove-question:hover {
+        opacity: 1;
+    }
+</style>
 
 <body>
     <div class="proposal-container">
@@ -157,7 +187,8 @@ $_SESSION['proposal']['step4_completed'] = true;
 
         <div class="current-crq">
             <h4><i class="fas fa-quote-left"></i> Your Central Research Question</h4>
-            <p><?php echo htmlspecialchars($_SESSION['proposal']['research_question'] ?? 'No central research question defined'); ?></p>
+            <p><?php echo htmlspecialchars($_SESSION['proposal']['research_question'] ?? 'No central research question defined'); ?>
+            </p>
         </div>
 
         <form action="step4.php" method="POST" id="researchQuestionsForm">
@@ -168,12 +199,15 @@ $_SESSION['proposal']['step4_completed'] = true;
                             <span class="question-number"><?php echo $index + 1; ?></span>
                             <label>Research Question</label>
                         </div>
-                        <textarea class="question-input" name="questions[]" placeholder="Enter your research question..." required><?php echo htmlspecialchars($question); ?></textarea>
+                        <textarea class="question-input" name="questions[]"
+                            placeholder="Enter your research question..."><?php echo htmlspecialchars($question); ?></textarea>
+
                         <?php if ($index > 1): ?>
                             <button type="button" class="remove-question" onclick="removeQuestion(this)">
                                 <i class="fas fa-times"></i>
                             </button>
                         <?php endif; ?>
+
                         <?php if (isset($errors['question_' . $index])): ?>
                             <div class="error-message">
                                 <i class="fas fa-exclamation-circle"></i>
@@ -199,7 +233,7 @@ $_SESSION['proposal']['step4_completed'] = true;
                 <button type="submit" name="previous_step" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Previous Step
                 </button>
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" name="next_step" class="btn btn-primary">
                     Next Step <i class="fas fa-arrow-right"></i>
                 </button>
                 <button type="submit" name="save_and_quit" class="btn btn-secondary">
@@ -207,31 +241,49 @@ $_SESSION['proposal']['step4_completed'] = true;
                 </button>
             </div>
         </form>
-    </div>
+        <script>
+            // Add logic for dynamically adding/removing questions
+            function addQuestion() {
+                const container = document.querySelector('.questions-container');
+                const newEntry = document.createElement('div');
+                const questionCount = container.children.length + 1;
+                newEntry.classList.add('question-entry');
+                newEntry.innerHTML = `
+            <div class="question-header">
+                <span class="question-number">${questionCount}</span>
+                <label>Research Question</label>
+            </div>
+            <textarea class="question-input" name="questions[]" placeholder="Enter your research question..."></textarea>
+            <button type="button" class="remove-question" onclick="removeQuestion(this)">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+                container.appendChild(newEntry);
+            }
 
-    <script>
-        function addQuestion() {
-            const container = document.querySelector('.questions-container');
-            const questionCount = container.children.length + 1;
-            const newQuestion = `
-                <div class="question-entry">
-                    <div class="question-header">
-                        <span class="question-number">${questionCount}</span>
-                        <label>Research Question</label>
-                    </div>
-                    <textarea class="question-input" name="questions[]" placeholder="Enter your research question..." required></textarea>
-                    <button type="button" class="remove-question" onclick="removeQuestion(this)">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            `;
-            container.insertAdjacentHTML('beforeend', newQuestion);
-        }
+            function removeQuestion(button) {
+                const questionEntry = button.closest('.question-entry');
+                questionEntry.remove();
+            }
 
-        function removeQuestion(button) {
-            button.closest('.question-entry').remove();
-        }
-    </script>
-</body>
+            // Validate form before submission for "Next Step" button only
+            document.getElementById('researchQuestionsForm').addEventListener('submit', function (event) {
+                const nextStepButton = event.submitter && event.submitter.classList.contains('btn-primary'); // Check if "Next Step" button was clicked
 
-</html>
+                if (nextStepButton) {
+                    const questionInputs = document.querySelectorAll('.question-input');
+                    let filledCount = 0;
+
+                    questionInputs.forEach(input => {
+                        if (input.value.trim() !== '') {
+                            filledCount++;
+                        }
+                    });
+
+                    if (filledCount < 2) {
+                        event.preventDefault(); // Prevent form submission
+                        alert('You must fill at least 2 research questions to proceed to the next step.');
+                    }
+                }
+            });
+        </script>

@@ -39,27 +39,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $referencesData = json_encode($references);
         $user_id = $_SESSION['user_id'];
         $proposal_id = $_SESSION['proposal']['proposal_id'] ?? null;
+
         // Preserve the current status if it exists in the session or database
-if (!isset($_SESSION['proposal']['status']) && $proposal_id) {
-    $stmt = $conn->prepare("SELECT status FROM proposals WHERE proposal_id = ? AND user_id = ?");
-    $stmt->bind_param("ii", $proposal_id, $user_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    if ($result->num_rows > 0) {
-        $row = $result->fetch_assoc();
-        $_SESSION['proposal']['status'] = $row['status'];
-    }
-}
-$status = $_SESSION['proposal']['status'] ?? 0;
+        if (!isset($_SESSION['proposal']['status']) && $proposal_id) {
+            $stmt = $conn->prepare("SELECT status FROM proposals WHERE proposal_id = ? AND user_id = ?");
+            $stmt->bind_param("ii", $proposal_id, $user_id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            if ($result->num_rows > 0) {
+                $row = $result->fetch_assoc();
+                $_SESSION['proposal']['status'] = $row['status'];
+            }
+        }
+        $status = $_SESSION['proposal']['status'] ?? 0;
 
-
-if (isset($_POST['submit'])) {
-    $status = 1; // Mark as submitted
-} elseif (isset($_POST['save_and_quit'])) {
-    // Retain current status without changing it
-    $status = $_SESSION['proposal']['status'] ?? $status;
-}
-
+        if (isset($_POST['submit'])) {
+            $status = 1; // Mark as submitted
+        } elseif (isset($_POST['save_and_quit'])) {
+            // Retain current status without changing it
+            $status = $_SESSION['proposal']['status'] ?? $status;
+        }
 
         if ($proposal_id) {
             // Update existing proposal
@@ -82,8 +81,8 @@ if (isset($_POST['submit'])) {
                 echo "<script>
                 alert('Your proposal has been submitted. Wait for the approval.');
                 window.location.href = '../student_dashboard.php';
-            </script>";                
-            exit();
+            </script>";
+                exit();
             } elseif (isset($_POST['save_and_quit'])) {
                 header("Location: ../student_dashboard.php");
                 exit();
@@ -127,70 +126,71 @@ $_SESSION['proposal']['step8_completed'] = true;
     <link rel="stylesheet" href="proposal_style.css">
 
 </head>
-<style>  .references-container {
-            background-color: #f8f9fa;
-            padding: 25px;
-            border-radius: 8px;
-            margin-bottom: 30px;
-        }
+<style>
+    .references-container {
+        background-color: #f8f9fa;
+        padding: 25px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+    }
 
-        .reference-entry {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
+    .reference-entry {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
 
-        .reference-entry textarea {
-            flex-grow: 1;
-            min-height: 100px;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            resize: vertical;
-            font-size: 1em;
-            line-height: 1.5;
-        }
+    .reference-entry textarea {
+        flex-grow: 1;
+        min-height: 100px;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        resize: vertical;
+        font-size: 1em;
+        line-height: 1.5;
+    }
 
-        .reference-controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
+    .reference-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
 
-        .add-reference-btn {
-            color: #007bff;
-            background: none;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 0.9em;
-        }
+    .add-reference-btn {
+        color: #007bff;
+        background: none;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.9em;
+    }
 
-        .remove-reference-btn {
-            color: #dc3545;
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 5px;
-        }
-        
-        .close-btn {
-            display: inline-block;
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-top: 15px;
-        }
+    .remove-reference-btn {
+        color: #dc3545;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 5px;
+    }
 
-        .close-btn:hover {
-            background-color: #0056b3;
-        }
+    .close-btn {
+        display: inline-block;
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-top: 15px;
+    }
+
+    .close-btn:hover {
+        background-color: #0056b3;
+    }
 </style>
 
 <body>
@@ -234,7 +234,8 @@ $_SESSION['proposal']['step8_completed'] = true;
                         <div class="reference-header">
                             <span class="reference-number"></span>
                         </div>
-                        <textarea class="reference-input" name="references[]" placeholder="Enter your reference..." required><?php echo htmlspecialchars($reference); ?></textarea>
+                        <textarea class="reference-input" name="references[]" placeholder="Enter your reference..."
+                            required><?php echo htmlspecialchars($reference); ?></textarea>
                         <?php if ($index > 0): ?>
                             <button type="button" class="remove-reference" onclick="removeReference(this)">
                                 <i class="fas fa-times"></i>
@@ -261,32 +262,31 @@ $_SESSION['proposal']['step8_completed'] = true;
                 </div>
             <?php endif; ?>
             <div class="button-group">
-    <button type="submit" name="previous_step" class="btn btn-secondary">
-        <i class="fas fa-arrow-left"></i> Previous Step
-    </button>
-    <button type="submit" class="btn btn-primary" name="submit" onclick="return confirmSubmission()">
-        <?php
-        // Check if the proposal is submitted and needs re-submission
-        if (isset($_SESSION['proposal']['status']) && $_SESSION['proposal']['status'] == 3) {
-            echo "Re-submit <i class='fas fa-redo'></i>";
-        } else {
-            echo "Submit <i class='fas fa-check'></i>";
-        }
-        ?>
-    </button>
-    <button type="submit" name="save_and_quit" class="btn btn-secondary">
-        <i class="fas fa-save"></i> Save and Quit
-    </button>
-</div>
-
-           
+                <button type="submit" name="previous_step" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Previous Step
+                </button>
+                <button type="submit" class="btn btn-primary" name="submit" onclick="return confirmSubmission()">
+                    <?php
+                    // Check if the proposal is submitted and needs re-submission
+                    if (isset($_SESSION['proposal']['status']) && $_SESSION['proposal']['status'] == 3) {
+                        echo "Re-submit <i class='fas fa-redo'></i>";
+                    } else {
+                        echo "Submit <i class='fas fa-check'></i>";
+                    }
+                    ?>
+                </button>
+                <button type="submit" name="save_and_quit" class="btn btn-secondary">
+                    <i class="fas fa-save"></i> Save and Quit
+                </button>
+            </div>
         </form>
     </div>
 
     <script>
         function confirmSubmission() {
-    return confirm("Are you sure you want to submit? Once submitted, you cannot edit or change the proposal.");
-}
+            return confirm("Are you sure you want to submit? Once submitted, you cannot edit or change the proposal.");
+        }
+
         function addReference() {
             const container = document.querySelector('.references-container');
             const newReference = `
@@ -306,7 +306,6 @@ $_SESSION['proposal']['step8_completed'] = true;
         function removeReference(button) {
             button.closest('.reference-entry').remove();
         }
-        
     </script>
 </body>
 

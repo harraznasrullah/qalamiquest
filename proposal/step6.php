@@ -18,12 +18,12 @@ if (!isset($_SESSION['proposal'])) {
 if (isset($_SESSION['proposal']['proposal_id']) && !isset($_SESSION['proposal']['preliminary_review'])) {
     $proposal_id = $_SESSION['proposal']['proposal_id'];
     $user_id = $_SESSION['user_id'];
-    
+
     $stmt = $conn->prepare("SELECT preliminary_review FROM proposals WHERE proposal_id = ? AND user_id = ?");
     $stmt->bind_param("ii", $proposal_id, $user_id);
     $stmt->execute();
     $result = $stmt->get_result();
-    
+
     if ($row = $result->fetch_assoc()) {
         // Decode the JSON string from database
         $_SESSION['proposal']['preliminary_review'] = json_decode($row['preliminary_review'], true);
@@ -34,11 +34,13 @@ if (isset($_SESSION['proposal']['proposal_id']) && !isset($_SESSION['proposal'][
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $errors = [];
 
-    // Validate preliminary review
+    // Check if "Next Step" button was clicked
+    $isNextStep = isset($_POST['next_step']);
+
+    // Validate preliminary review (only for "Next Step")
     $preliminary_review = trim($_POST['preliminary_review'] ?? '');
 
-    // Validation rules
-    if (strlen($preliminary_review) < 450) {
+    if ($isNextStep && strlen($preliminary_review) < 450) {
         $errors['preliminary_review'] = "Preliminary review must be at least 450 characters long.";
     }
 
@@ -72,11 +74,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 header("Location: ../student_dashboard.php");
                 exit();
             } elseif (isset($_POST['previous_step'])) {
-                // Go to Previous Step (Step 3)
+                // Go to Previous Step (Step 5)
                 header("Location: step5.php");
                 exit();
             } else {
-                // Proceed to next step (Step 5)
+                // Proceed to next step (Step 7)
                 header("Location: step7.php");
                 exit();
             }
@@ -93,8 +95,6 @@ if (isset($_SESSION['proposal']['preliminary_review'])) {
 }
 $_SESSION['proposal']['step6_completed'] = true;
 ?>
-
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -161,7 +161,7 @@ $_SESSION['proposal']['step6_completed'] = true;
                 <h3>Preliminary Review</h3>
                 <textarea name="preliminary_review"
                     placeholder="Provide a comprehensive review of existing research related to your topic. What have other researchers found? What are the key theories and findings in your field? What aspects haven't been fully explored? How will your research address these gaps?"
-                    required><?php echo htmlspecialchars($saved_review); ?></textarea>
+                    ><?php echo htmlspecialchars($saved_review); ?></textarea>
                 <div class="character-count">
                     <span class="current">0</span>/450 characters minimum
                 </div>
@@ -174,10 +174,10 @@ $_SESSION['proposal']['step6_completed'] = true;
             </div>
 
             <div class="button-group">
-                <button type="button" class="btn btn-secondary" onclick="window.location.href='step5.php'">
+                <button type="submit" name="previous_step" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Previous Step
                 </button>
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" name="next_step" class="btn btn-primary">
                     Next Step <i class="fas fa-arrow-right"></i>
                 </button>
                 <button type="submit" name="save_and_quit" class="btn btn-secondary">
@@ -202,36 +202,22 @@ $_SESSION['proposal']['step6_completed'] = true;
 
         // Form validation
         document.getElementById('preliminaryReviewForm').addEventListener('submit', function (e) {
-            const preliminaryReview = document.querySelector('textarea[name="preliminary_review"]');
-            let isValid = true;
+            const nextStepButton = e.submitter && e.submitter.classList.contains('btn-primary'); // Check if "Next Step" button was clicked
 
-            if (preliminaryReview.value.trim().length < 450) {
-                isValid = false;
-                showError("Preliminary review must be at least 450 characters long", preliminaryReview);
-            }
+            if (nextStepButton) {
+                const preliminaryReview = document.querySelector('textarea[name="preliminary_review"]');
+                let isValid = true;
 
-            if (!isValid) {
-                e.preventDefault();
+                if (preliminaryReview.value.trim().length < 450) {
+                    isValid = false;
+                    alert('Preliminary review must be at least 450 characters long.');
+                }
+
+                if (!isValid) {
+                    e.preventDefault();
+                }
             }
         });
-
-        function showError(message, element) {
-            // Remove any existing error messages
-            const existingError = element.parentElement.querySelector('.error-message');
-            if (existingError) {
-                existingError.remove();
-            }
-
-            // Create and show new error message
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'error-message';
-            errorDiv.innerHTML = `
-                <i class="fas fa-exclamation-circle"></i>
-                ${message}
-            `;
-
-            element.parentElement.appendChild(errorDiv);
-        }
     </script>
 </body>
 

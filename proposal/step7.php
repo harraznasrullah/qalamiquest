@@ -4,6 +4,7 @@ session_start();
 if (isset($_SESSION['proposal_submitted'])) {
     unset($_SESSION['proposal_submitted']); // Remove it if it exists
 }
+
 // Check if user is logged in
 if (!isset($_SESSION['user_name'])) {
     header("Location: login.php");
@@ -19,9 +20,11 @@ if (!isset($_SESSION['proposal']['preliminary_review'])) {
 // Include database connection
 include('db_connection.php');
 
-// Form Handling
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $errors = [];
+
+    // Check if "Next Step" button was clicked
+    $isNextStep = isset($_POST['next_step']);
 
     // Get and validate form data
     $research_design = trim($_POST['research_design'] ?? '');
@@ -30,21 +33,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $sampling_method = trim($_POST['sampling_method'] ?? '');
     $ethical_considerations = trim($_POST['ethical_considerations'] ?? '');
 
-    // Validation rules
-    if (strlen($research_design) < 200) {
-        $errors['research_design'] = "Research design description must be at least 200 characters";
-    }
-    if (strlen($data_collection) < 200) {
-        $errors['data_collection'] = "Data collection methods must be at least 200 characters";
-    }
-    if (strlen($data_analysis) < 200) {
-        $errors['data_analysis'] = "Data analysis approach must be at least 200 characters";
-    }
-    if (strlen($sampling_method) < 150) {
-        $errors['sampling_method'] = "Sampling method must be at least 150 characters";
-    }
-    if (strlen($ethical_considerations) < 150) {
-        $errors['ethical_considerations'] = "Ethical considerations must be at least 150 characters";
+    // Validation rules (only for "Next Step")
+    if ($isNextStep) {
+        if (strlen($research_design) < 200) {
+            $errors['research_design'] = "Research design description must be at least 200 characters";
+        }
+        if (strlen($data_collection) < 200) {
+            $errors['data_collection'] = "Data collection methods must be at least 200 characters";
+        }
+        if (strlen($data_analysis) < 200) {
+            $errors['data_analysis'] = "Data analysis approach must be at least 200 characters";
+        }
+        if (strlen($sampling_method) < 150) {
+            $errors['sampling_method'] = "Sampling method must be at least 150 characters";
+        }
+        if (strlen($ethical_considerations) < 150) {
+            $errors['ethical_considerations'] = "Ethical considerations must be at least 150 characters";
+        }
     }
 
     // If validation passes, save data to session
@@ -65,41 +70,35 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $user_id = $_SESSION['user_id'];
         $proposal_id = $_SESSION['proposal']['proposal_id'] ?? null;
 
-        if (isset($_POST['save_and_quit']) || isset($_POST['previous_step']) || isset($_POST['next_step'])) {
-            if ($proposal_id) {
-                // Update existing proposal
-                $stmt = $conn->prepare("UPDATE proposals SET methodologies = ?, status = 0, last_saved = NOW() WHERE proposal_id = ? AND user_id = ?");
-                $stmt->bind_param("sii", $methodologyData, $proposal_id, $user_id);
-            } else {
-                // Insert a new proposal if no proposal_id exists
-                $stmt = $conn->prepare("INSERT INTO proposals (user_id, methodologies, status, last_saved) VALUES (?, ?, 0, NOW())");
-                $stmt->bind_param("is", $user_id, $methodologyData);
-            }
+        if ($proposal_id) {
+            // Update existing proposal
+            $stmt = $conn->prepare("UPDATE proposals SET methodologies = ?, status = 0, last_saved = NOW() WHERE proposal_id = ? AND user_id = ?");
+            $stmt->bind_param("sii", $methodologyData, $proposal_id, $user_id);
+        } else {
+            // Insert a new proposal if no proposal_id exists
+            $stmt = $conn->prepare("INSERT INTO proposals (user_id, methodologies, status, last_saved) VALUES (?, ?, 0, NOW())");
+            $stmt->bind_param("is", $user_id, $methodologyData);
+        }
 
-            if ($stmt->execute()) {
-                if (!$proposal_id) {
-                    $proposal_id = $stmt->insert_id;
-                    $_SESSION['proposal']['proposal_id'] = $proposal_id;
-                }
-                // Add proper redirection for all cases
-                if (isset($_POST['save_and_quit'])) {
-                    header("Location: ../student_dashboard.php");
-                } else if (isset($_POST['previous_step'])) {
-                    header("Location: step6.php");
-                } else if (isset($_POST['next_step'])) {
-                    header("Location: step8.php");
-                }
-            } else {
-                $errors['database'] = "Error saving data: " . $stmt->error;
+        if ($stmt->execute()) {
+            if (!$proposal_id) {
+                $proposal_id = $stmt->insert_id;
+                $_SESSION['proposal']['proposal_id'] = $proposal_id;
             }
-            exit();
+            // Add proper redirection for all cases
+            if (isset($_POST['save_and_quit'])) {
+                header("Location: ../student_dashboard.php");
+                exit();
+            } else if (isset($_POST['previous_step'])) {
+                header("Location: step6.php");
+                exit();
+            } else if (isset($_POST['next_step'])) {
+                header("Location: step8.php");
+                exit();
+            }
         } else {
             $errors['database'] = "Error saving data: " . $stmt->error;
         }
-    } else {
-        // Proceed to the next step (Step 8)
-        header("Location: step8.php");
-        exit();
     }
 }
 
@@ -121,7 +120,6 @@ if (!isset($_SESSION['proposal']['methodology']) && isset($_SESSION['proposal'][
 $saved_methodology = json_decode($_SESSION['proposal']['methodology'] ?? '{}', true);
 $_SESSION['proposal']['step7_completed'] = true;
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -198,8 +196,7 @@ $_SESSION['proposal']['step7_completed'] = true;
                 <div class="help-text">Describe your overall research approach (e.g., qualitative, quantitative, mixed
                     methods) and justify your choice.</div>
                 <textarea name="research_design"
-                    placeholder="Explain your research design and why it's appropriate for your study..."
-                    required><?php echo htmlspecialchars($saved_methodology['research_design'] ?? ''); ?></textarea>
+                    placeholder="Explain your research design and why it's appropriate for your study..."><?php echo htmlspecialchars($saved_methodology['research_design'] ?? ''); ?></textarea>
                 <div class="character-count">
                     <span class="current">0</span>/200 characters minimum
                 </div>
@@ -215,8 +212,8 @@ $_SESSION['proposal']['step7_completed'] = true;
                 <h3><i class="fas fa-file-alt"></i> Data Collection Methods</h3>
                 <div class="help-text">Describe how you will collect your data (e.g., interviews, surveys,
                     observations).</div>
-                <textarea name="data_collection" placeholder="Detail your data collection methods and tools..."
-                    required><?php echo htmlspecialchars($saved_methodology['data_collection'] ?? ''); ?></textarea>
+                <textarea name="data_collection"
+                    placeholder="Detail your data collection methods and tools..."><?php echo htmlspecialchars($saved_methodology['data_collection'] ?? ''); ?></textarea>
                 <div class="character-count">
                     <span class="current">0</span>/200 characters minimum
                 </div>
@@ -231,8 +228,8 @@ $_SESSION['proposal']['step7_completed'] = true;
             <div class="methodology-section">
                 <h3><i class="fas fa-chart-bar"></i> Data Analysis Approach</h3>
                 <div class="help-text">Explain how you will analyze and interpret your data.</div>
-                <textarea name="data_analysis" placeholder="Describe your data analysis methods and techniques..."
-                    required><?php echo htmlspecialchars($saved_methodology['data_analysis'] ?? ''); ?></textarea>
+                <textarea name="data_analysis"
+                    placeholder="Describe your data analysis methods and techniques..."><?php echo htmlspecialchars($saved_methodology['data_analysis'] ?? ''); ?></textarea>
                 <div class="character-count">
                     <span class="current">0</span>/200 characters minimum
                 </div>
@@ -248,8 +245,7 @@ $_SESSION['proposal']['step7_completed'] = true;
                 <h3><i class="fas fa-users"></i> Sampling Method</h3>
                 <div class="help-text">Describe your target population and how you will select participants.</div>
                 <textarea name="sampling_method"
-                    placeholder="Explain your sampling strategy and participant selection criteria..."
-                    required><?php echo htmlspecialchars($saved_methodology['sampling_method'] ?? ''); ?></textarea>
+                    placeholder="Explain your sampling strategy and participant selection criteria..."><?php echo htmlspecialchars($saved_methodology['sampling_method'] ?? ''); ?></textarea>
                 <div class="character-count">
                     <span class="current">0</span>/150 characters minimum
                 </div>
@@ -265,8 +261,7 @@ $_SESSION['proposal']['step7_completed'] = true;
                 <h3><i class="fas fa-shield-alt"></i> Ethical Considerations</h3>
                 <div class="help-text">Address how you will protect participants and handle ethical concerns.</div>
                 <textarea name="ethical_considerations"
-                    placeholder="Describe the ethical considerations and how you will address them..."
-                    required><?php echo htmlspecialchars($saved_methodology['ethical_considerations'] ?? ''); ?></textarea>
+                    placeholder="Describe the ethical considerations and how you will address them..."><?php echo htmlspecialchars($saved_methodology['ethical_considerations'] ?? ''); ?></textarea>
                 <div class="character-count">
                     <span class="current">0</span>/150 characters minimum
                 </div>
@@ -308,26 +303,31 @@ $_SESSION['proposal']['step7_completed'] = true;
 
         // Form validation
         document.getElementById('methodologyForm').addEventListener('submit', function (e) {
-            const sections = {
-                'research_design': 200,
-                'data_collection': 200,
-                'data_analysis': 200,
-                'sampling_method': 150,
-                'ethical_considerations': 150
-            };
+            const nextStepButton = e.submitter && e.submitter.classList.contains('btn-primary'); // Check if "Next Step" button was clicked
 
-            let isValid = true;
+            if (nextStepButton) {
+                const sections = {
+                    'research_design': 200,
+                    'data_collection': 200,
+                    'data_analysis': 200,
+                    'sampling_method': 150,
+                    'ethical_considerations': 150
+                };
 
-            for (const [field, minLength] of Object.entries(sections)) {
-                const textarea = document.querySelector(`textarea[name="${field}"]`);
-                if (textarea.value.trim().length < minLength) {
-                    isValid = false;
-                    showError(`This section must be at least ${minLength} characters long`, textarea);
+                let isValid = true;
+
+                for (const [field, minLength] of Object.entries(sections)) {
+                    const textarea = document.querySelector(`textarea[name="${field}"]`);
+                    if (textarea.value.trim().length < minLength) {
+                        isValid = false;
+                        showError(`This section must be at least ${minLength} characters long`, textarea);
+                    }
                 }
-            }
 
-            if (!isValid) {
-                e.preventDefault();
+                if (!isValid) {
+                    e.preventDefault();
+                    alert('Please fill all sections with the required minimum characters.');
+                }
             }
         });
 
@@ -342,9 +342,9 @@ $_SESSION['proposal']['step7_completed'] = true;
             const errorDiv = document.createElement('div');
             errorDiv.className = 'error-message';
             errorDiv.innerHTML = `
-                <i class="fas fa-exclamation-circle"></i>
-                ${message}
-            `;
+            <i class="fas fa-exclamation-circle"></i>
+            ${message}
+        `;
 
             element.parentElement.appendChild(errorDiv);
         }

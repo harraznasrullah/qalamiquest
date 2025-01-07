@@ -31,21 +31,27 @@ if ($stmt->execute()) {
     }
 }
 
-// Handle form submission for saving research question in the session or database
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $errors = [];
     $research_question = trim($_POST['research_question']);
 
-    // Validate the research question
-    if (empty($research_question)) {
-        $errors['research_question'] = "Please provide your research question";
-    } elseif (strlen($research_question) < 20) {
-        $errors['research_question'] = "Your research question seems too short. Please provide more detail";
-    } elseif (!preg_match('/\?$/', $research_question)) {
-        $errors['research_question'] = "Your research question should end with a question mark";
+    // Identify the button clicked
+    $is_save_and_quit = isset($_POST['save_and_quit']);
+    $is_previous_step = isset($_POST['previous_step']);
+    $is_next_step = isset($_POST['next_step']);
+
+    // Perform validation only if "Next Step" is clicked
+    if ($is_next_step) {
+        if (empty($research_question)) {
+            $errors['research_question'] = "Please provide your research question";
+        } elseif (strlen($research_question) < 20) {
+            $errors['research_question'] = "Your research question seems too short. Please provide more detail";
+        } elseif (!preg_match('/\?$/', $research_question)) {
+            $errors['research_question'] = "Your research question should end with a question mark";
+        }
     }
 
-    if (empty($errors)) {
+    if (empty($errors) || $is_save_and_quit || $is_previous_step) {
         // Get all data from previous steps
         $title = $_SESSION['proposal']['title'];
         $introduction = $_SESSION['proposal']['introduction'];
@@ -61,11 +67,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $proposal_id = $_SESSION['proposal']['proposal_id'] ?? null;
 
         if ($proposal_id) {
-            // Update existing proposal
             $stmt = $conn->prepare("UPDATE proposals SET title = ?, introduction = ?, problem_statement = ?, objectives = ?, central_research_question = ?, status = 0, last_saved = NOW() WHERE proposal_id = ? AND user_id = ?");
             $stmt->bind_param("sssssii", $title, $introduction, $problem_statement, $objectivesData, $research_question, $proposal_id, $user_id);
         } else {
-            // Insert a new proposal
             $stmt = $conn->prepare("INSERT INTO proposals (user_id, title, introduction, problem_statement, objectives, central_research_question, status, last_saved) VALUES (?, ?, ?, ?, ?, ?, 0, NOW())");
             $stmt->bind_param("isssss", $user_id, $title, $introduction, $problem_statement, $objectivesData, $research_question);
         }
@@ -76,18 +80,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $_SESSION['proposal']['proposal_id'] = $proposal_id;
             }
 
-            // Check which button was pressed: "Previous Step", "Next Step", or "Save and Quit"
-            if (isset($_POST['save_and_quit'])) {
-                // Redirect to the dashboard or another page (e.g., student_dashboard.php)
+            // Redirect based on the button clicked
+            if ($is_save_and_quit) {
                 header("Location: ../student_dashboard.php");
                 exit();
-            } elseif (isset($_POST['next_step'])) {
-                // Redirect to the next step (Step 3)
+            } elseif ($is_next_step) {
                 header("Location: step4.php");
                 exit();
-            } elseif (isset($_POST['previous_step'])) {
-                // Redirect to the previous step (Step 1 or Step 3)
-                header("Location: step2.php"); // You can adjust this to go to the desired step
+            } elseif ($is_previous_step) {
+                header("Location: step2.php");
                 exit();
             }
         } else {
@@ -176,7 +177,7 @@ $_SESSION['proposal']['step3_completed'] = true;
                 <div class="question-form-group">
                     <label for="research_question" class="question-label">Your Central Research Question:</label>
                     <textarea id="research_question" name="research_question" class="question-input"
-                        placeholder="Type your research question here..." required
+                        placeholder="Type your research question here..." 
                         maxlength="1000"><?php echo htmlspecialchars($saved_question); ?></textarea>
                     <div class="character-count">
                         <span id="charCount">0</span> characters

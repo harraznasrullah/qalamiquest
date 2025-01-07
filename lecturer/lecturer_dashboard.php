@@ -24,22 +24,24 @@ if (isset($_GET['action']) && $_GET['action'] == 'archive' && isset($_GET['propo
 }
 
 // Pagination setup
-$results_per_page = 5;
+$results_per_page = 6;
 $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
 $offset = ($page - 1) * $results_per_page;
 
-// Total proposals count
+// Total proposals count with the same filters as the main query
 $total_query = "SELECT COUNT(*) as total 
                 FROM proposals p
                 JOIN users u ON p.user_id = u.id 
                 WHERE p.approval_date IS NOT NULL 
-                AND u.title = 'student'";
+                AND u.title = 'student'
+                AND p.is_deleted = 0
+                AND (p.lecturer_visibility IS NULL OR p.lecturer_visibility = 1)";
 $total_result = $conn->query($total_query);
 $total_row = $total_result->fetch_assoc();
 $total_proposals = $total_row['total'];
 $total_pages = ceil($total_proposals / $results_per_page);
 
-// Modify the main query to exclude archived proposals
+// Main query to fetch proposals
 $query = "SELECT p.proposal_id, p.title, p.approval_date, p.status, p.is_deleted, u.fullname AS student_name
           FROM proposals p
           JOIN users u ON p.user_id = u.id 
@@ -77,260 +79,262 @@ $pending_status = $row_status['status_count'];
     <link rel="stylesheet" href="../styles.css">
     <link rel="stylesheet" href="lecturer_style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        .overview-title {
-            display: flex;
-            align-items: center;
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: white;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-        }
 
-        .overview-title i {
-            margin-right: 10px;
-        }
-
-        .overview-controls {
-            display: flex;
-            gap: 15px;
-            justify-content: flex-start;
-        }
-
-        .approval-btn {
-            background-color: #fff;
-            border: 2px solid #007bff;
-            color: #007bff;
-            padding: 10px 15px;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .approval-btn:hover {
-            background-color: #007bff;
-            color: white;
-            box-shadow: 0 4px 8px rgba(0, 77, 77, 0.2);
-        }
-
-        .approval-btn .notification-badge {
-            position: absolute;
-            top: -10px;
-            right: -10px;
-            background-color: #dc3545;
-            color: white;
-            border-radius: 50%;
-            padding: 2px 6px;
-            font-size: 12px;
-            min-width: 20px;
-            height: 25px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-
-        /* New notification styles */
-        .relative {
-            position: relative;
-        }
-
-        .absolute {
-            position: absolute;
-        }
-
-        .-top-2 {
-            top: 0.5rem;
-        }
-
-        .-right-2 {
-            right: -0.5rem;
-        }
-
-        .inline-flex {
-            display: inline-flex;
-        }
-
-        .items-center {
-            align-items: center;
-        }
-
-        .justify-center {
-            justify-content: center;
-        }
-
-        .rounded-full {
-            border-radius: 9999px;
-        }
-
-        .bg-red-500 {
-            background-color: #ef4444;
-        }
-
-        .text-xs {
-            font-size: 0.75rem;
-            line-height: 1rem;
-        }
-
-        .text-white {
-            color: #ffffff;
-        }
-
-        .h-5 {
-            height: 1.25rem;
-        }
-
-        .w-5 {
-            width: 1.25rem;
-        }
-
-        /* Additional styles for notification badge */
-        .notification-badge {
-            position: absolute;
-            top: -10px;
-            right: -10px;
-            background-color: #ef4444;
-            color: white;
-            border-radius: 50%;
-            padding: 2px 6px;
-            font-size: 12px;
-            min-width: 20px;
-            height: 25px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-
-        .btn-view {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background-color 0.3s;
-        }
-
-        .btn-view:hover {
-            background-color: #0056b3;
-        }
-
-        .btn-view i {
-            margin-right: 5px;
-        }
-
-
-        /* Pagination Styles */
-        .pagination {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-top: 20px;
-            gap: 10px;
-        }
-
-        .pagination a,
-        .pagination span {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            color: #007bff;
-            text-decoration: none;
-            border-radius: 4px;
-            transition: all 0.3s ease;
-        }
-
-        .pagination a:hover {
-            background-color: #f0f0f0;
-        }
-
-        .pagination .current {
-            background-color: #007bff;
-            color: white;
-            border-color: #007bff;
-        }
-
-        .pagination .disabled {
-            color: #6c757d;
-            pointer-events: none;
-            opacity: 0.6;
-        }
-
-        /* Archive Button Styles */
-        .btn-archive {
-            background-color: #d3d3d3;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background-color 0.3s;
-            margin-left: 5px;
-        }
-
-        .btn-archive:hover {
-            background-color: #c0c0c0;
-        }
-
-        .btn-cancel {
-            background-color: #e74c3c;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background-color 0.3s;
-            margin-left: 5px;
-        }
-
-        .btn-cancel:hover {
-            background-color: #c0392b;
-        }
-
-        .btn-archive i {
-            margin-right: 5px;
-        }
-
-        /* Confirmation Modal Styles */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-        }
-
-        .modal-content {
-            background-color: white;
-            margin: 15% auto;
-            padding: 20px;
-            border-radius: 5px;
-            width: 300px;
-            text-align: center;
-        }
-
-        .modal-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 20px;
-        }
-    </style>
 </head>
+<style>
+    <style>.overview-title {
+        display: flex;
+        align-items: center;
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: white;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+    }
+
+    .overview-title i {
+        margin-right: 10px;
+    }
+
+    .overview-controls {
+        display: flex;
+        gap: 15px;
+        justify-content: flex-start;
+    }
+
+    .approval-btn {
+        background-color: #fff;
+        border: 2px solid #007bff;
+        color: #007bff;
+        padding: 10px 15px;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .approval-btn:hover {
+        background-color: #007bff;
+        color: white;
+        box-shadow: 0 4px 8px rgba(0, 77, 77, 0.2);
+    }
+
+    .approval-btn .notification-badge {
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        background-color: #dc3545;
+        color: white;
+        border-radius: 50%;
+        padding: 2px 6px;
+        font-size: 12px;
+        min-width: 20px;
+        height: 25px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    /* New notification styles */
+    .relative {
+        position: relative;
+    }
+
+    .absolute {
+        position: absolute;
+    }
+
+    .-top-2 {
+        top: 0.5rem;
+    }
+
+    .-right-2 {
+        right: -0.5rem;
+    }
+
+    .inline-flex {
+        display: inline-flex;
+    }
+
+    .items-center {
+        align-items: center;
+    }
+
+    .justify-center {
+        justify-content: center;
+    }
+
+    .rounded-full {
+        border-radius: 9999px;
+    }
+
+    .bg-red-500 {
+        background-color: #ef4444;
+    }
+
+    .text-xs {
+        font-size: 0.75rem;
+        line-height: 1rem;
+    }
+
+    .text-white {
+        color: #ffffff;
+    }
+
+    .h-5 {
+        height: 1.25rem;
+    }
+
+    .w-5 {
+        width: 1.25rem;
+    }
+
+    /* Additional styles for notification badge */
+    .notification-badge {
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        background-color: #ef4444;
+        color: white;
+        border-radius: 50%;
+        padding: 2px 6px;
+        font-size: 12px;
+        min-width: 20px;
+        height: 25px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-view {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background-color 0.3s;
+    }
+
+    .btn-view:hover {
+        background-color: #0056b3;
+    }
+
+    .btn-view i {
+        margin-right: 5px;
+    }
+
+
+    /* Pagination Styles */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 20px;
+        gap: 10px;
+    }
+
+    .pagination a,
+    .pagination span {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        color: #007bff;
+        text-decoration: none;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+    }
+
+    .pagination a:hover {
+        background-color: #f0f0f0;
+    }
+
+    .pagination .current {
+        background-color: #007bff;
+        color: white;
+        border-color: #007bff;
+    }
+
+    .pagination .disabled {
+        color: #6c757d;
+        pointer-events: none;
+        opacity: 0.6;
+    }
+
+    /* Archive Button Styles */
+    .btn-archive {
+        background-color: #d3d3d3;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background-color 0.3s;
+        margin-left: 5px;
+    }
+
+    .btn-archive:hover {
+        background-color: #c0c0c0;
+    }
+
+    .btn-cancel {
+        background-color: #e74c3c;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background-color 0.3s;
+        margin-left: 5px;
+    }
+
+    .btn-cancel:hover {
+        background-color: #c0392b;
+    }
+
+    .btn-archive i {
+        margin-right: 5px;
+    }
+
+    /* Confirmation Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+        background-color: white;
+        margin: 15% auto;
+        padding: 20px;
+        border-radius: 5px;
+        width: 300px;
+        text-align: center;
+    }
+
+    .modal-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 20px;
+    }
+</style>
+</style>
 
 <body>
     <!-- Navbar -->
@@ -437,82 +441,83 @@ $pending_status = $row_status['status_count'];
 
             <!-- Pagination -->
             <div class="pagination">
-                <?php if ($page > 1): ?>
-                    <a href="?page=1">First</a>
-                    <a href="?page=<?php echo $page - 1; ?>">Previous</a>
-                <?php endif; ?>
-
-                <?php
-                // Show page numbers with ellipsis for large number of pages
-                $start = max(1, $page - 1);
-                $end = min($total_pages, $page + 1);
-
-                for ($i = $start; $i <= $end; $i++): ?>
-                    <?php if ($i == $page): ?>
-                        <span class="current"><?php echo $i; ?></span>
-                    <?php else: ?>
-                        <a href="?page=<?php echo $i; ?>"><?php echo $i; ?></a>
+                <?php if ($total_pages > 1): ?>
+                    <?php if ($page > 1): ?>
+                        <a href="?page=1">First</a>
+                        <a href="?page=<?php echo $page - 1; ?>">Previous</a>
                     <?php endif; ?>
-                <?php endfor; ?>
 
-                <?php if ($page < $total_pages): ?>
-                    <a href="?page=<?php echo $page + 1; ?>">Next</a>
-                    <a href="?page=<?php echo $total_pages; ?>">Last</a>
+                    <?php
+                    // Show page numbers with ellipsis for large number of pages
+                    $start = max(1, $page - 1);
+                    $end = min($total_pages, $page + 1);
+
+                    for ($i = $start; $i <= $end; $i++): ?>
+                        <?php if ($i == $page): ?>
+                            <span class="current"><?php echo $i; ?></span>
+                        <?php else: ?>
+                            <a href="?page=<?php echo $i; ?>"><?php echo $i; ?></a>
+                        <?php endif; ?>
+                    <?php endfor; ?>
+
+                    <?php if ($page < $total_pages): ?>
+                        <a href="?page=<?php echo $page + 1; ?>">Next</a>
+                        <a href="?page=<?php echo $total_pages; ?>">Last</a>
+                    <?php endif; ?>
                 <?php endif; ?>
             </div>
-        </div>
 
-        <!-- Archive Confirmation Modal -->
-        <div id="archiveModal" class="modal">
-            <div class="modal-content">
-                <h2>Confirm Archiving</h2>
-                <p>Are you sure you want to archive this proposal?
-                    It will be hidden from your dashboard but the student can still access it.</p>
-                <div class="modal-buttons">
-                    <button onclick="cancelArchive()" class="btn-cancel">Cancel</button>
-                    <button onclick="proceedArchive()" class="btn-archive">Archive</button>
+            <!-- Archive Confirmation Modal -->
+            <div id="archiveModal" class="modal">
+                <div class="modal-content">
+                    <h2>Confirm Archiving</h2>
+                    <p>Are you sure you want to archive this proposal?
+                        It will be hidden from your dashboard but the student can still access it.</p>
+                    <div class="modal-buttons">
+                        <button onclick="cancelArchive()" class="btn-cancel">Cancel</button>
+                        <button onclick="proceedArchive()" class="btn-archive">Archive</button>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <script>
-            let proposalToArchive = null;
+            <script>
+                let proposalToArchive = null;
 
-            function confirmArchive(proposalId) {
-                proposalToArchive = proposalId;
-                document.getElementById('archiveModal').style.display = 'block';
-            }
-
-
-            function cancelArchive() {
-                proposalToArchive = null;
-                document.getElementById('archiveModal').style.display = 'none';
-            }
-
-            function proceedArchive() {
-                if (proposalToArchive) {
-                    window.location.href = `lecturer_dashboard.php?action=archive&proposal_id=${proposalToArchive}`;
+                function confirmArchive(proposalId) {
+                    proposalToArchive = proposalId;
+                    document.getElementById('archiveModal').style.display = 'block';
                 }
-            }
 
-            function viewProposal(proposalId) {
-                window.location.href = `../view_comment.php?proposal_id=${proposalId}`;
-            }
 
-            function toggleSidebar() {
-                var sidebar = document.getElementById("sidebar");
-                var mainContent = document.getElementById("main-content");
-
-                if (sidebar.style.left === "0px") {
-                    sidebar.style.left = "-250px";
-                    mainContent.style.marginLeft = "0";
-                } else {
-                    sidebar.style.left = "0";
-                    mainContent.style.marginLeft = "250px";
+                function cancelArchive() {
+                    proposalToArchive = null;
+                    document.getElementById('archiveModal').style.display = 'none';
                 }
-            }
 
-        </script>
+                function proceedArchive() {
+                    if (proposalToArchive) {
+                        window.location.href = `lecturer_dashboard.php?action=archive&proposal_id=${proposalToArchive}`;
+                    }
+                }
+
+                function viewProposal(proposalId) {
+                    window.location.href = `../view_comment.php?proposal_id=${proposalId}`;
+                }
+
+                function toggleSidebar() {
+                    var sidebar = document.getElementById("sidebar");
+                    var mainContent = document.getElementById("main-content");
+
+                    if (sidebar.style.left === "0px") {
+                        sidebar.style.left = "-250px";
+                        mainContent.style.marginLeft = "0";
+                    } else {
+                        sidebar.style.left = "0";
+                        mainContent.style.marginLeft = "250px";
+                    }
+                }
+
+            </script>
 </body>
 
 </html>

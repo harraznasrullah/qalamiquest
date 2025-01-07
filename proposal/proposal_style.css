@@ -389,7 +389,7 @@ textarea:focus {
 }
 
 .add-objective-btn,
-.add-question-btn{
+.add-question-btn {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -632,4 +632,3 @@ textarea:focus {
     margin-top: 5px;
     margin-bottom: 10px;
 }
-
