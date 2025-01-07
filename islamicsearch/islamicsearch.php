@@ -5,6 +5,13 @@ include(__DIR__ . '/../db_connection.php');
 $results = [];
 $resultsPerPage = 5;
 $currentPage = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+
+// Reset to page 1 if a new search is performed
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    error_log("Form submitted. Resetting page to 1.");
+    $currentPage = 1;
+}
+
 $offset = ($currentPage - 1) * $resultsPerPage;
 $totalResults = 0;
 $searchType = isset($_POST['search_type']) ? $_POST['search_type'] : (isset($_SESSION['search_type']) ? $_SESSION['search_type'] : 'quran');
@@ -203,6 +210,8 @@ function toggleSidebar() {
                 <?php if (isset($error)): ?>
                     <div class="error-message"><?php echo $error; ?></div>
                 <?php endif; ?>
+                <!-- Hidden input to reset pagination to page 1 -->
+                <input type="hidden" name="page" value="1">
                 <!-- Radio Buttons for Search Type -->
                 <label>
                     <input type="radio" name="search_type" value="quran" <?php echo $searchType === 'quran' ? 'checked' : ''; ?>>
