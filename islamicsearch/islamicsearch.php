@@ -15,6 +15,16 @@ $_SESSION['search_type'] = $searchType;
 $user_name = strtoupper($_SESSION['user_name']);
 $keywordsArray = []; // Initialize keywords array
 
+function highlight_keywords($text, $keywords) {
+    if (!empty($keywords)) {
+        foreach ($keywords as $keyword) {
+            // Use a regular expression to highlight whole words (case-insensitive)
+            $text = preg_replace('/\b(' . preg_quote($keyword, '/') . ')\b/i', '<span class="highlight">$1</span>', $text);
+        }
+    }
+    return $text;
+}
+
 // Keyword Handling Logic
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!empty($_POST['keywords'])) {
@@ -50,9 +60,8 @@ if (count($keywordsArray) > 5) {
         $types = '';
 
         foreach ($keywordsArray as $keyword) {
-            // Use REGEXP to match whole words only
-            $conditions[] = "english_translation REGEXP ?";
-            $params[] = "[[:<:]]" . $keyword . "[[:>:]]"; // Word boundaries for MySQL
+            $conditions[] = "english_translation LIKE ?";
+            $params[] = "%$keyword%";
             $types .= 's';
         }
 
@@ -78,13 +87,11 @@ if (count($keywordsArray) > 5) {
             $result = $stmt->get_result();
 
             while ($row = $result->fetch_assoc()) {
-                // Highlight keywords in the text and translation
-                if ($searchType === 'quran') {
-                    $row['text'] = highlight_keywords($row['text'], $keywordsArray);
-                } elseif ($searchType === 'hadith') {
-                    $row['arabic_text'] = highlight_keywords($row['arabic_text'], $keywordsArray);
+                $highlightedTranslation = $row['english_translation'];
+                foreach ($keywordsArray as $keyword) {
+                    $highlightedTranslation = preg_replace('/(' . preg_quote($keyword, '/') . ')/i', '<span class="highlight">$1</span>', $highlightedTranslation);
                 }
-                $row['english_translation'] = highlight_keywords($row['english_translation'], $keywordsArray);
+                $row['highlighted_translation'] = $highlightedTranslation;
                 $results[] = $row;
             }
             $stmt->close();
@@ -127,15 +134,6 @@ function extractKeywordsFromFile($content) {
 
     return implode(',', $topWords);
 }
-
-// Function to highlight keywords in the text
-function highlight_keywords($text, $keywords) {
-    foreach ($keywords as $keyword) {
-        // Use a regular expression to find whole words (case-insensitive)
-        $text = preg_replace('/\b(' . preg_quote($keyword, '/') . ')\b/i', '<span class="highlight">$1</span>', $text);
-    }
-    return $text;
-}
 ?>
 
 <!DOCTYPE html>
@@ -148,10 +146,6 @@ function highlight_keywords($text, $keywords) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <style>
-    .highlight {
-        background-color: yellow;
-        font-weight: bold;
-    }
     .bookmark-btn {
         margin-top: 15px;
     }
@@ -172,12 +166,12 @@ function highlight_keywords($text, $keywords) {
 
 <!-- Sidebar -->
 <div class="sidebar" id="sidebar">
-        <a href="../student_dashboard.php"><i class="fas fa-home"></i> Dashboard</a>
-        <a href="../assign_sv.php"><i class="fas fa-users"></i> Apply Supervisor</a>
-        <a href="../islamicsearch/bookmark/view_bookmarks.php"><i class="fas fa-bookmark"></i> Bookmark</a>
-        <a href="../edit_profile.php"><i class="fas fa-user"></i> Edit Profile</a>
-        <a href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
-    </div>
+    <a href="../student_dashboard.php"><i class="fas fa-home"></i> Dashboard</a>
+    <a href="../assign_sv.php"><i class="fas fa-users"></i> Apply Supervisor</a>
+    <a href="../islamicsearch/bookmark/view_bookmarks.php"><i class="fas fa-bookmark"></i> Bookmark</a>
+    <a href="../edit_profile.php"><i class="fas fa-user"></i> Edit Profile</a>
+    <a href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
+</div>
 
 <!-- JavaScript to toggle sidebar -->
 <script>
@@ -198,7 +192,7 @@ function toggleSidebar() {
 <div id="main-content">
     <div class="container">
         <h1>ISLAMIC EXPLORER</h1>
-        <p>Search for keywords in the Quran<br>(Maximum 5 keywords, separate with commas)</p>
+        <p>Search for keywords in the Quran or Hadith<br>(Maximum 5 keywords, separate with commas)</p>
         
         <form action="" method="POST" enctype="multipart/form-data" onsubmit="return validateKeywords()">
             <div class="search-container">
@@ -209,91 +203,94 @@ function toggleSidebar() {
                 <?php if (isset($error)): ?>
                     <div class="error-message"><?php echo $error; ?></div>
                 <?php endif; ?>
-                 <!-- Radio Buttons for Search Type -->
-                <form method="POST" action="">
-                    <label>
-                        <input type="radio" name="search_type" value="quran" <?php echo $searchType === 'quran' ? 'checked' : ''; ?>>
-                        Quran
-                    </label>
-                    <label>
-                        <input type="radio" name="search_type" value="hadith" <?php echo $searchType === 'hadith' ? 'checked' : ''; ?>>
-                        Hadith
-                    </label>
-                </form>
+                <!-- Radio Buttons for Search Type -->
+                <label>
+                    <input type="radio" name="search_type" value="quran" <?php echo $searchType === 'quran' ? 'checked' : ''; ?>>
+                    Quran
+                </label>
+                <label>
+                    <input type="radio" name="search_type" value="hadith" <?php echo $searchType === 'hadith' ? 'checked' : ''; ?>>
+                    Hadith
+                </label>
                 <button class="search" type="submit">Search</button>
             </div>
         </form>
         
         <div class="results">
-    <?php if (!empty($results)): ?>
-        <p>Found a total of <?php echo $totalResults; ?> results.</p>
-        <?php foreach ($results as $result): ?>
-            <div>
-                <?php if ($searchType === 'quran'): ?>
-                    <strong>Surah <?php echo $result['surah'] ?? 'N/A'; ?>, Ayat <?php echo $result['ayat'] ?? 'N/A'; ?></strong><br>
-                    <?php echo $result['text']; ?><br>
-                    <p><strong>English Translation:</strong> <?php echo $result['english_translation']; ?></p>
-                    <button class="bookmark-btn" 
-                            data-surah="<?php echo $result['surah'] ?? ''; ?>" 
-                            data-ayat="<?php echo $result['ayat'] ?? ''; ?>" 
-                            data-text="<?php echo htmlspecialchars($result['text'] ?? '', ENT_QUOTES); ?>" 
-                            data-translation="<?php echo htmlspecialchars($result['english_translation'] ?? '', ENT_QUOTES); ?>">
-                        Bookmark
-                    </button>
-                <?php elseif ($searchType === 'hadith'): ?>
-                    <strong>Hadith Reference: <?php echo $result['reference'] ?? 'N/A'; ?></strong><br>
-                    <p><strong>Arabic Text:</strong> <?php echo $result['arabic_text']; ?></p>
-                    <p><strong>English Translation:</strong> <?php echo $result['english_translation']; ?></p>
-                    <!-- Single Bookmark Button for Hadith -->
-                    <button class="bookmark-btn" 
-                            data-reference="<?php echo $result['reference'] ?? ''; ?>" 
-                            data-arabic-text="<?php echo htmlspecialchars($result['arabic_text'] ?? '', ENT_QUOTES); ?>" 
-                            data-text="<?php echo htmlspecialchars($result['arabic_text'] ?? '', ENT_QUOTES); ?>" 
-                            data-translation="<?php echo htmlspecialchars($result['english_translation'] ?? '', ENT_QUOTES); ?>">
-                        Bookmark
-                    </button>
-                <?php endif; ?>
-            </div>
-            <hr>
-        <?php endforeach; ?>
+            <?php if (!empty($results)): ?>
+                <p>Found a total of <?php echo $totalResults; ?> results.</p>
+                <?php foreach ($results as $result): ?>
+                    <div>
+                        <?php if ($searchType === 'quran'): ?>
+                            <strong>Surah <?php echo $result['surah'] ?? 'N/A'; ?>, Ayat <?php echo $result['ayat'] ?? 'N/A'; ?></strong><br>
+                            <?php 
+                            $highlightedText = highlight_keywords($result['text'] ?? '', $keywordsArray);
+                            echo $highlightedText; 
+                            ?><br>
+                            <p><strong>English Translation:</strong> <?php echo highlight_keywords($result['english_translation'] ?? 'N/A', $keywordsArray); ?></p>
+                            <button class="bookmark-btn" 
+                                    data-surah="<?php echo $result['surah'] ?? ''; ?>" 
+                                    data-ayat="<?php echo $result['ayat'] ?? ''; ?>" 
+                                    data-text="<?php echo htmlspecialchars($result['text'] ?? '', ENT_QUOTES); ?>" 
+                                    data-translation="<?php echo htmlspecialchars($result['english_translation'] ?? '', ENT_QUOTES); ?>">
+                                Bookmark
+                            </button>
+                        <?php elseif ($searchType === 'hadith'): ?>
+                            <strong>Hadith Reference: <?php echo $result['reference'] ?? 'N/A'; ?></strong><br>
+                            <p><strong>Arabic Text:</strong> <?php echo highlight_keywords($result['arabic_text'] ?? 'N/A', $keywordsArray); ?></p>
+                            <p><strong>English Translation:</strong> <?php echo highlight_keywords($result['english_translation'] ?? 'N/A', $keywordsArray); ?></p>
+                            <!-- Only one bookmark button here -->
+                            <button class="bookmark-btn" 
+                                    data-reference="<?php echo $result['reference'] ?? ''; ?>" 
+                                    data-arabic-text="<?php echo htmlspecialchars($result['arabic_text'] ?? '', ENT_QUOTES); ?>" 
+                                    data-text="<?php echo htmlspecialchars($result['arabic_text'] ?? '', ENT_QUOTES); ?>" 
+                                    data-translation="<?php echo htmlspecialchars($result['english_translation'] ?? '', ENT_QUOTES); ?>">
+                                Bookmark
+                            </button>
+                        <?php endif; ?>
+                    </div>
+                    <hr>
+                <?php endforeach; ?>
 
-        <!-- Pagination Section -->
-        <?php
-        $paginationKeywords = implode(",", $keywordsArray); // Crucial for file uploads
-        if ($totalPages > 1): ?>
-            <div class="pagination">
                 <?php
-                $start = max(1, $currentPage - 2);
-                $end = min($totalPages, $currentPage + 2);
+                $paginationKeywords = implode(",", $keywordsArray);
+                if ($totalPages > 1): ?>
+                    <div class="pagination">
+                        <?php
+                        $start = max(1, $currentPage - 2);
+                        $end = min($totalPages, $currentPage + 2);
 
-                if ($currentPage > 1): ?>
-                    <a href="?keywords=<?php echo urlencode($paginationKeywords); ?>&page=<?php echo ($currentPage - 1); ?>">Previous</a>
+                        if ($currentPage > 1): ?>
+                            <a href="?keywords=<?php echo urlencode($paginationKeywords); ?>&page=<?php echo ($currentPage - 1); ?>">Previous</a>
+                        <?php endif; ?>
+
+                        <?php for ($i = $start; $i <= $end; $i++): ?>
+                            <a href="?keywords=<?php echo urlencode($paginationKeywords); ?>&page=<?php echo $i; ?>" class="<?php echo ($i === $currentPage) ? 'active' : ''; ?>"><?php echo $i; ?></a>
+                        <?php endfor; ?>
+
+                        <?php if ($currentPage < $totalPages): ?>
+                            <a href="?keywords=<?php echo urlencode($paginationKeywords); ?>&page=<?php echo ($currentPage + 1); ?>">Next</a>
+                        <?php endif; ?>
+                    </div>
                 <?php endif; ?>
-
-                <?php for ($i = $start; $i <= $end; $i++): ?>
-                    <a href="?keywords=<?php echo urlencode($paginationKeywords); ?>&page=<?php echo $i; ?>" class="<?php echo ($i === $currentPage) ? 'active' : ''; ?>"><?php echo $i; ?></a>
-                <?php endfor; ?>
-
-                <?php if ($currentPage < $totalPages): ?>
-                    <a href="?keywords=<?php echo urlencode($paginationKeywords); ?>&page=<?php echo ($currentPage + 1); ?>">Next</a>
-                <?php endif; ?>
-            </div>
-        <?php endif; ?>
-    <?php else: ?>
-        <p>No results found.</p>
-    <?php endif; ?>
+            <?php else: ?>
+                <p>No results found.</p>
+            <?php endif; ?>
+        </div>
+    </div>
 </div>
 
 <script>
 function updateKeywordCount() {
     const keywordsInput = document.getElementById('keywords');
-    const keywordTags = document.getElementById('keywordTags");
+    const keywordTags = document.getElementById('keywordTags');
     const keywordCount = document.getElementById('keywordCount');
     
     const keywords = keywordsInput.value.split(',').map(kw => kw.trim()).filter(kw => kw);
     keywordTags.innerHTML = keywords.map(kw => `<span class="keyword-tag">${kw}</span>`).join('');
     keywordCount.textContent = `${keywords.length} keyword(s) (maximum 5)`;
 }
+
 function validateKeywords() {
     const keywordsInput = document.getElementById('keywords');
     const keywords = keywordsInput.value.split(',').map(kw => kw.trim()).filter(kw => kw);
@@ -303,7 +300,7 @@ function validateKeywords() {
     }
     return true;
 }
-// Update this part in your JavaScript code
+
 document.addEventListener('DOMContentLoaded', function() {
     const bookmarkButtons = document.querySelectorAll('.bookmark-btn');
     bookmarkButtons.forEach(button => {
@@ -312,21 +309,19 @@ document.addEventListener('DOMContentLoaded', function() {
             const ayat = this.dataset.ayat;
             const reference = this.dataset.reference;
             const arabicText = this.dataset.arabicText;
-            const text = this.dataset.text; // Ensure this is set correctly
+            const text = this.dataset.text;
             const translation = this.dataset.translation;
             
             try {
                 const formData = new FormData();
                 if (surah && ayat) {
-                    // Quran bookmark
                     formData.append('surah', surah);
                     formData.append('ayat', ayat);
                     formData.append('text', text);
                 } else if (reference) {
-                    // Hadith bookmark
                     formData.append('reference', reference);
                     formData.append('arabic_text', arabicText);
-                    formData.append('text', text); // Ensure text is passed for Hadith
+                    formData.append('text', text);
                 }
                 formData.append('translation', translation);
                 
@@ -357,7 +352,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
-
 </script>
 
 </body>

@@ -83,94 +83,94 @@ if (!isset($_SESSION['user_id'])) {
 
     <script>
         document.addEventListener('DOMContentLoaded', async function () {
-    try {
-        const response = await fetch('./bookmarks.php');
-        const data = await response.json();
+            try {
+                const response = await fetch('./bookmarks.php');
+                const data = await response.json();
 
-        console.log("Fetched bookmarks data:", data); // Debug: Log the fetched data
+                console.log("Fetched bookmarks data:", data); // Debug: Log the fetched data
 
-        if (data.success) {
-            const container = document.getElementById('bookmarks-container');
+                if (data.success) {
+                    const container = document.getElementById('bookmarks-container');
 
-            if (data.data.length === 0) {
-                container.innerHTML = '<p>No bookmarks found.</p>';
-                return;
-            }
-
-            data.data.forEach(bookmark => {
-                const date = new Date(bookmark.created_at);
-                const formattedDate = date.toLocaleString();
-
-                const bookmarkElement = document.createElement('div');
-                bookmarkElement.className = 'ayat';
-
-                if (bookmark.surah && bookmark.ayat) {
-                    // Display Quran bookmark
-                    bookmarkElement.innerHTML = `
-                        <strong>Surah ${bookmark.surah}, Ayat ${bookmark.ayat}</strong>
-                        <div class="arabic-text">${bookmark.text || 'N/A'}</div>
-                        <div class="translation">${bookmark.english_translation || 'N/A'}</div>
-                        <div class="bookmark-date">Saved on: ${formattedDate}</div>
-                        <button class="delete-btn" data-id="${bookmark.id}">Delete Bookmark</button>
-                    `;
-                } else if (bookmark.reference && bookmark.arabic_text) {
-                    // Display Hadith bookmark
-                    bookmarkElement.innerHTML = `
-                        <strong>Hadith Reference: ${bookmark.reference || 'N/A'}</strong>
-                        <div class="arabic-text">${bookmark.arabic_text || 'N/A'}</div>
-                        <div class="translation">${bookmark.english_translation || 'N/A'}</div>
-                        <div class="bookmark-date">Saved on: ${formattedDate}</div>
-                        <button class="delete-btn" data-id="${bookmark.id}">Delete Bookmark</button>
-                    `;
-                } else {
-                    // Handle invalid bookmarks
-                    bookmarkElement.innerHTML = `
-                        <strong>Invalid Bookmark</strong>
-                        <div class="bookmark-date">Saved on: ${formattedDate}</div>
-                        <button class="delete-btn" data-id="${bookmark.id}">Delete Bookmark</button>
-                    `;
-                }
-
-                container.appendChild(bookmarkElement);
-            });
-
-            // Add delete functionality
-            document.querySelectorAll('.delete-btn').forEach(button => {
-                button.addEventListener('click', async function () {
-                    const bookmarkId = this.dataset.id;
-                    if (confirm('Are you sure you want to delete this bookmark?')) {
-                        try {
-                            const response = await fetch('bookmarks.php', {
-                                method: 'DELETE',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({ id: bookmarkId })
-                            });
-                            const result = await response.json();
-                            if (result.success) {
-                                this.closest('.ayat').remove();
-                                if (document.querySelectorAll('.ayat').length === 0) {
-                                    document.getElementById('bookmarks-container').innerHTML = '<p>No bookmarks found.</p>';
-                                }
-                            } else {
-                                alert('Failed to delete bookmark');
-                            }
-                        } catch (error) {
-                            console.error('Error:', error);
-                            alert('An error occurred while deleting the bookmark');
-                        }
+                    if (data.data.length === 0) {
+                        container.innerHTML = '<p>No bookmarks found.</p>';
+                        return;
                     }
-                });
-            });
-        } else {
-            alert('Failed to load bookmarks: ' + data.message);
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('An error occurred while loading bookmarks');
-    }
-});
+
+                    data.data.forEach(bookmark => {
+                        const date = new Date(bookmark.created_at);
+                        const formattedDate = date.toLocaleString();
+
+                        const bookmarkElement = document.createElement('div');
+                        bookmarkElement.className = 'ayat';
+
+                        if (bookmark.surah && bookmark.ayat) {
+                            // Display Quran bookmark
+                            bookmarkElement.innerHTML = `
+                                <strong>Surah ${bookmark.surah}, Ayat ${bookmark.ayat}</strong>
+                                <div class="arabic-text">${bookmark.text || 'N/A'}</div>
+                                <div class="translation">${bookmark.english_translation || 'N/A'}</div>
+                                <div class="bookmark-date">Saved on: ${formattedDate}</div>
+                                <button class="delete-btn" data-id="${bookmark.id}">Delete Bookmark</button>
+                            `;
+                        } else if (bookmark.reference && bookmark.arabic_text) {
+                            // Display Hadith bookmark
+                            bookmarkElement.innerHTML = `
+                                <strong>Hadith Reference: ${bookmark.reference || 'N/A'}</strong>
+                                <div class="arabic-text">${bookmark.arabic_text || 'N/A'}</div>
+                                <div class="translation">${bookmark.english_translation || 'N/A'}</div>
+                                <div class="bookmark-date">Saved on: ${formattedDate}</div>
+                                <button class="delete-btn" data-id="${bookmark.id}">Delete Bookmark</button>
+                            `;
+                        } else {
+                            // Handle invalid bookmarks
+                            bookmarkElement.innerHTML = `
+                                <strong>Invalid Bookmark</strong>
+                                <div class="bookmark-date">Saved on: ${formattedDate}</div>
+                                <button class="delete-btn" data-id="${bookmark.id}">Delete Bookmark</button>
+                            `;
+                        }
+
+                        container.appendChild(bookmarkElement);
+                    });
+
+                    // Add delete functionality
+                    document.querySelectorAll('.delete-btn').forEach(button => {
+                        button.addEventListener('click', async function () {
+                            const bookmarkId = this.dataset.id;
+                            if (confirm('Are you sure you want to delete this bookmark?')) {
+                                try {
+                                    const response = await fetch('bookmarks.php', {
+                                        method: 'DELETE',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                        },
+                                        body: JSON.stringify({ id: bookmarkId })
+                                    });
+                                    const result = await response.json();
+                                    if (result.success) {
+                                        this.closest('.ayat').remove();
+                                        if (document.querySelectorAll('.ayat').length === 0) {
+                                            document.getElementById('bookmarks-container').innerHTML = '<p>No bookmarks found.</p>';
+                                        }
+                                    } else {
+                                        alert('Failed to delete bookmark');
+                                    }
+                                } catch (error) {
+                                    console.error('Error:', error);
+                                    alert('An error occurred while deleting the bookmark');
+                                }
+                            }
+                        });
+                    });
+                } else {
+                    alert('Failed to load bookmarks: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while loading bookmarks');
+            }
+        });
 
         function toggleSidebar() {
             const sidebar = document.getElementById("sidebar");

@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $ayat = $_POST['ayat'] ?? null;
         $reference = $_POST['reference'] ?? null;
         $arabic_text = $_POST['arabic_text'] ?? null;
-        $text = $_POST['text'] ?? null; // Ensure this is set correctly
+        $text = $_POST['text'] ?? null;
         $translation = $_POST['translation'] ?? null;
 
         // Debug: Log the received data
@@ -31,39 +31,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        // Check if the bookmark already exists
+        // Check if bookmark already exists
         if ($surah && $ayat) {
-            // Quran bookmark
             $checkQuery = "SELECT id FROM bookmarks WHERE user_id = ? AND surah = ? AND ayat = ?";
             $checkStmt = $conn->prepare($checkQuery);
-            $checkStmt->bind_param('iis', $user_id, $surah, $ayat);
+            $checkStmt->bind_param('iii', $user_id, $surah, $ayat);
         } else {
-            // Hadith bookmark
             $checkQuery = "SELECT id FROM bookmarks WHERE user_id = ? AND reference = ?";
             $checkStmt = $conn->prepare($checkQuery);
             $checkStmt->bind_param('is', $user_id, $reference);
         }
-
         $checkStmt->execute();
-        $checkStmt->store_result();
+        $result = $checkStmt->get_result();
 
-        if ($checkStmt->num_rows > 0) {
-            // Bookmark already exists
-            echo json_encode(['success' => false, 'message' => 'You already bookmarked this']);
-            $checkStmt->close();
+        if ($result->num_rows > 0) {
+            echo json_encode(['success' => false, 'message' => 'Bookmark already exists']);
             exit;
         }
 
-        $checkStmt->close();
-
         // Insert new bookmark
         if ($surah && $ayat) {
-            // Quran bookmark
             $query = "INSERT INTO bookmarks (user_id, surah, ayat, text, english_translation) VALUES (?, ?, ?, ?, ?)";
             $stmt = $conn->prepare($query);
             $stmt->bind_param('iisss', $user_id, $surah, $ayat, $text, $translation);
         } else {
-            // Hadith bookmark
             $query = "INSERT INTO bookmarks (user_id, reference, arabic_text, text, english_translation) VALUES (?, ?, ?, ?, ?)";
             $stmt = $conn->prepare($query);
             $stmt->bind_param('issss', $user_id, $reference, $arabic_text, $text, $translation);
