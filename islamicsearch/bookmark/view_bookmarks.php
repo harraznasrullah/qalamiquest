@@ -48,7 +48,6 @@ if (!isset($_SESSION['user_id'])) {
             transition: margin-left 0.3s;
             padding: 16px;
             margin-left: 0;
-            /* Default margin */
         }
     </style>
 </head>
@@ -57,12 +56,12 @@ if (!isset($_SESSION['user_id'])) {
     <!-- Navbar -->
     <div class="navbar">
         <div class="navbar-left">
-            <button class="open-btn" onclick="toggleSidebar()">☰</button> <!-- Sidebar toggle button -->
+            <button class="open-btn" onclick="toggleSidebar()">☰</button>
             QalamiQuest
         </div>
         <div class="navbar-right">
-            <span><?php echo strtoupper($_SESSION['user_name']); ?></span> <!-- Display logged in user's name -->
-            <i class="fas fa-user"></i> <!-- Profile icon -->
+            <span><?php echo strtoupper($_SESSION['user_name']); ?></span>
+            <i class="fas fa-user"></i>
         </div>
     </div>
 
@@ -88,6 +87,8 @@ if (!isset($_SESSION['user_id'])) {
                 const response = await fetch('./bookmarks.php');
                 const data = await response.json();
 
+                console.log("Fetched bookmarks data:", data); // Debug: Log the fetched data
+
                 if (data.success) {
                     const container = document.getElementById('bookmarks-container');
 
@@ -102,13 +103,34 @@ if (!isset($_SESSION['user_id'])) {
 
                         const bookmarkElement = document.createElement('div');
                         bookmarkElement.className = 'ayat';
-                        bookmarkElement.innerHTML = `
-                        <strong>Surah ${bookmark.surah}, Ayat ${bookmark.ayat}</strong>
-                        <div class="arabic-text">${bookmark.text}</div>
-                        <div class="translation">${bookmark.english_translation}</div>
-                        <div class="bookmark-date">Saved on: ${formattedDate}</div>
-                        <button class="delete-btn" data-id="${bookmark.id}">Delete Bookmark</button>
-                    `;
+
+                        if (bookmark.surah && bookmark.ayat) {
+                            // Display Quran bookmark
+                            bookmarkElement.innerHTML = `
+                                <strong>Surah ${bookmark.surah}, Ayat ${bookmark.ayat}</strong>
+                                <div class="arabic-text">${bookmark.text || 'N/A'}</div>
+                                <div class="translation">${bookmark.english_translation || 'N/A'}</div>
+                                <div class="bookmark-date">Saved on: ${formattedDate}</div>
+                                <button class="delete-btn" data-id="${bookmark.id}">Delete Bookmark</button>
+                            `;
+                        } else if (bookmark.reference && bookmark.arabic_text) {
+                            // Display Hadith bookmark
+                            bookmarkElement.innerHTML = `
+                                <strong>Hadith Reference: ${bookmark.reference || 'N/A'}</strong>
+                                <div class="arabic-text">${bookmark.arabic_text || 'N/A'}</div>
+                                <div class="translation">${bookmark.english_translation || 'N/A'}</div>
+                                <div class="bookmark-date">Saved on: ${formattedDate}</div>
+                                <button class="delete-btn" data-id="${bookmark.id}">Delete Bookmark</button>
+                            `;
+                        } else {
+                            // Handle invalid bookmarks
+                            bookmarkElement.innerHTML = `
+                                <strong>Invalid Bookmark</strong>
+                                <div class="bookmark-date">Saved on: ${formattedDate}</div>
+                                <button class="delete-btn" data-id="${bookmark.id}">Delete Bookmark</button>
+                            `;
+                        }
+
                         container.appendChild(bookmarkElement);
                     });
 
@@ -150,49 +172,16 @@ if (!isset($_SESSION['user_id'])) {
             }
         });
 
-        // Sidebar toggle function
         function toggleSidebar() {
             const sidebar = document.getElementById("sidebar");
             const mainContent = document.getElementById("main-content");
 
-            // Check if the sidebar is currently open or closed
             if (sidebar.style.left === "0px") {
-                sidebar.style.left = "-300px"; // Close the sidebar
-                mainContent.style.marginLeft = "0"; // Reset the main content margin
+                sidebar.style.left = "-300px";
+                mainContent.style.marginLeft = "0";
             } else {
-                sidebar.style.left = "0"; // Open the sidebar
-                mainContent.style.marginLeft = "240px"; // Shift the main content
-            }
-        }
-        async function loadBookmarks() {
-            try {
-                const container = document.getElementById('bookmarks-container');
-                const response = await fetch('./bookmarks.php');
-
-                // Add this debug code
-                const responseText = await response.text();
-                console.log('Raw response:', responseText);
-
-                // Try parsing it manually to see where it fails
-                try {
-                    const data = JSON.parse(responseText);
-
-                    if (data.success) {
-                        container.innerHTML = ''; // Clear loading message
-
-                        if (data.data.length === 0) {
-                            container.innerHTML = '<p>No bookmarks found.</p>';
-                            return;
-                        }
-                        // ... rest of your code
-                    }
-                } catch (parseError) {
-                    console.error('JSON Parse Error:', parseError);
-                    showError('Invalid response from server');
-                }
-            } catch (error) {
-                console.error('Fetch Error:', error);
-                showError('Failed to load bookmarks');
+                sidebar.style.left = "0";
+                mainContent.style.marginLeft = "240px";
             }
         }
     </script>

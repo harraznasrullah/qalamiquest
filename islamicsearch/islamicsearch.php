@@ -5,6 +5,13 @@ include(__DIR__ . '/../db_connection.php');
 $results = [];
 $resultsPerPage = 5;
 $currentPage = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+
+// Reset to page 1 if a new search is performed
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    error_log("Form submitted. Resetting page to 1.");
+    $currentPage = 1;
+}
+
 $offset = ($currentPage - 1) * $resultsPerPage;
 $totalResults = 0;
 $searchType = isset($_POST['search_type']) ? $_POST['search_type'] : (isset($_SESSION['search_type']) ? $_SESSION['search_type'] : 'quran');
@@ -14,6 +21,16 @@ $_SESSION['search_type'] = $searchType;
 
 $user_name = strtoupper($_SESSION['user_name']);
 $keywordsArray = []; // Initialize keywords array
+
+function highlight_keywords($text, $keywords) {
+    if (!empty($keywords)) {
+        foreach ($keywords as $keyword) {
+            // Use a regular expression to highlight whole words (case-insensitive)
+            $text = preg_replace('/\b(' . preg_quote($keyword, '/') . ')\b/i', '<span class="highlight">$1</span>', $text);
+        }
+    }
+    return $text;
+}
 
 // Keyword Handling Logic
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -156,12 +173,12 @@ function extractKeywordsFromFile($content) {
 
 <!-- Sidebar -->
 <div class="sidebar" id="sidebar">
-        <a href="../student_dashboard.php"><i class="fas fa-home"></i> Dashboard</a>
-        <a href="../assign_sv.php"><i class="fas fa-users"></i> Apply Supervisor</a>
-        <a href="../islamicsearch/bookmark/view_bookmarks.php"><i class="fas fa-bookmark"></i> Bookmark</a>
-        <a href="../edit_profile.php"><i class="fas fa-user"></i> Edit Profile</a>
-        <a href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
-    </div>
+    <a href="../student_dashboard.php"><i class="fas fa-home"></i> Dashboard</a>
+    <a href="../assign_sv.php"><i class="fas fa-users"></i> Apply Supervisor</a>
+    <a href="../islamicsearch/bookmark/view_bookmarks.php"><i class="fas fa-bookmark"></i> Bookmark</a>
+    <a href="../edit_profile.php"><i class="fas fa-user"></i> Edit Profile</a>
+    <a href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
+</div>
 
 <!-- JavaScript to toggle sidebar -->
 <script>
@@ -182,7 +199,7 @@ function toggleSidebar() {
 <div id="main-content">
     <div class="container">
         <h1>ISLAMIC EXPLORER</h1>
-        <p>Search for keywords in the Quran<br>(Maximum 5 keywords, separate with commas)</p>
+        <p>Search for keywords in the Quran or Hadith<br>(Maximum 5 keywords, separate with commas)</p>
         
         <form action="" method="POST" enctype="multipart/form-data" onsubmit="return validateKeywords()">
             <div class="search-container">
@@ -193,93 +210,83 @@ function toggleSidebar() {
                 <?php if (isset($error)): ?>
                     <div class="error-message"><?php echo $error; ?></div>
                 <?php endif; ?>
-                 <!-- Radio Buttons for Search Type -->
-                <form method="POST" action="">
-                    <label>
-                        <input type="radio" name="search_type" value="quran" <?php echo $searchType === 'quran' ? 'checked' : ''; ?>>
-                        Quran
-                    </label>
-                    <label>
-                        <input type="radio" name="search_type" value="hadith" <?php echo $searchType === 'hadith' ? 'checked' : ''; ?>>
-                        Hadith
-                    </label>
-                </form>
+                <!-- Hidden input to reset pagination to page 1 -->
+                <input type="hidden" name="page" value="1">
+                <!-- Radio Buttons for Search Type -->
+                <label>
+                    <input type="radio" name="search_type" value="quran" <?php echo $searchType === 'quran' ? 'checked' : ''; ?>>
+                    Quran
+                </label>
+                <label>
+                    <input type="radio" name="search_type" value="hadith" <?php echo $searchType === 'hadith' ? 'checked' : ''; ?>>
+                    Hadith
+                </label>
                 <button class="search" type="submit">Search</button>
             </div>
         </form>
         
         <div class="results">
-    <?php
-    // Function to highlight keywords in the text
-    function highlight_keywords($text, $keywords) {
-        foreach ($keywords as $keyword) {
-            // Use a regular expression to find whole words (case-insensitive)
-            $text = preg_replace('/\b(' . preg_quote($keyword, '/') . ')\b/i', '<span class="highlight">$1</span>', $text);
-        }
-        return $text;
-    }
+            <?php if (!empty($results)): ?>
+                <p>Found a total of <?php echo $totalResults; ?> results.</p>
+                <?php foreach ($results as $result): ?>
+                    <div>
+                        <?php if ($searchType === 'quran'): ?>
+                            <strong>Surah <?php echo $result['surah'] ?? 'N/A'; ?>, Ayat <?php echo $result['ayat'] ?? 'N/A'; ?></strong><br>
+                            <?php 
+                            $highlightedText = highlight_keywords($result['text'] ?? '', $keywordsArray);
+                            echo $highlightedText; 
+                            ?><br>
+                            <p><strong>English Translation:</strong> <?php echo highlight_keywords($result['english_translation'] ?? 'N/A', $keywordsArray); ?></p>
+                            <button class="bookmark-btn" 
+                                    data-surah="<?php echo $result['surah'] ?? ''; ?>" 
+                                    data-ayat="<?php echo $result['ayat'] ?? ''; ?>" 
+                                    data-text="<?php echo htmlspecialchars($result['text'] ?? '', ENT_QUOTES); ?>" 
+                                    data-translation="<?php echo htmlspecialchars($result['english_translation'] ?? '', ENT_QUOTES); ?>">
+                                Bookmark
+                            </button>
+                        <?php elseif ($searchType === 'hadith'): ?>
+                            <strong>Hadith Reference: <?php echo $result['reference'] ?? 'N/A'; ?></strong><br>
+                            <p><strong>Arabic Text:</strong> <?php echo highlight_keywords($result['arabic_text'] ?? 'N/A', $keywordsArray); ?></p>
+                            <p><strong>English Translation:</strong> <?php echo highlight_keywords($result['english_translation'] ?? 'N/A', $keywordsArray); ?></p>
+                            <!-- Only one bookmark button here -->
+                            <button class="bookmark-btn" 
+                                    data-reference="<?php echo $result['reference'] ?? ''; ?>" 
+                                    data-arabic-text="<?php echo htmlspecialchars($result['arabic_text'] ?? '', ENT_QUOTES); ?>" 
+                                    data-text="<?php echo htmlspecialchars($result['arabic_text'] ?? '', ENT_QUOTES); ?>" 
+                                    data-translation="<?php echo htmlspecialchars($result['english_translation'] ?? '', ENT_QUOTES); ?>">
+                                Bookmark
+                            </button>
+                        <?php endif; ?>
+                    </div>
+                    <hr>
+                <?php endforeach; ?>
 
-    // Get the search keywords (from GET or POST request)
-    $keywords = isset($_GET['keywords']) ? explode(',', $_GET['keywords']) : []; // Adjust based on your input method
-    ?>
-
-    <?php if (!empty($results)): ?>
-        <p>Found a total of <?php echo $totalResults; ?> results.</p>
-        <?php foreach ($results as $result): ?>
-            <div>
-                <?php if ($searchType === 'quran'): ?>
-                    <strong>Surah <?php echo $result['surah'] ?? 'N/A'; ?>, Ayat <?php echo $result['ayat'] ?? 'N/A'; ?></strong><br>
-                    <?php 
-                    // Highlight keywords in the Quran text
-                    $highlightedText = highlight_keywords($result['text'] ?? '', $keywords);
-                    echo $highlightedText; 
-                    ?><br>
-                    <p><strong>English Translation:</strong> <?php echo highlight_keywords($result['english_translation'] ?? 'N/A', $keywords); ?></p>
-                <?php elseif ($searchType === 'hadith'): ?>
-                    <strong>Hadith Reference: <?php echo $result['reference'] ?? 'N/A'; ?></strong><br>
-                    <p><strong>Arabic Text:</strong> <?php echo highlight_keywords($result['arabic_text'] ?? 'N/A', $keywords); ?></p>
-                    <p><strong>English Translation:</strong> <?php echo highlight_keywords($result['english_translation'] ?? 'N/A', $keywords); ?></p>
-                <?php endif; ?>
-                <button class="bookmark-btn" 
-                        data-surah="<?php echo $result['surah'] ?? ''; ?>" 
-                        data-ayat="<?php echo $result['ayat'] ?? ''; ?>" 
-                        data-text="<?php echo htmlspecialchars($result['text'] ?? '', ENT_QUOTES); ?>" 
-                        data-translation="<?php echo htmlspecialchars($result['english_translation'] ?? '', ENT_QUOTES); ?>">
-                    Bookmark
-                </button>
-            </div>
-            <hr>
-        <?php endforeach; ?>
-
-        <?php
-        $paginationKeywords = implode(",", $keywordsArray); // Crucial for file uploads
-        if ($totalPages > 1): ?>
-            <div class="pagination">
                 <?php
-                $start = max(1, $currentPage - 2);
-                $end = min($totalPages, $currentPage + 2);
+                $paginationKeywords = implode(",", $keywordsArray);
+                if ($totalPages > 1): ?>
+                    <div class="pagination">
+                        <?php
+                        $start = max(1, $currentPage - 2);
+                        $end = min($totalPages, $currentPage + 2);
 
-                if ($currentPage > 1): ?>
-                    <a href="?keywords=<?php echo urlencode($paginationKeywords); ?>&page=<?php echo ($currentPage - 1); ?>">Previous</a>
+                        if ($currentPage > 1): ?>
+                            <a href="?keywords=<?php echo urlencode($paginationKeywords); ?>&page=<?php echo ($currentPage - 1); ?>">Previous</a>
+                        <?php endif; ?>
+
+                        <?php for ($i = $start; $i <= $end; $i++): ?>
+                            <a href="?keywords=<?php echo urlencode($paginationKeywords); ?>&page=<?php echo $i; ?>" class="<?php echo ($i === $currentPage) ? 'active' : ''; ?>"><?php echo $i; ?></a>
+                        <?php endfor; ?>
+
+                        <?php if ($currentPage < $totalPages): ?>
+                            <a href="?keywords=<?php echo urlencode($paginationKeywords); ?>&page=<?php echo ($currentPage + 1); ?>">Next</a>
+                        <?php endif; ?>
+                    </div>
                 <?php endif; ?>
-
-                <?php for ($i = $start; $i <= $end; $i++): ?>
-                    <a href="?keywords=<?php echo urlencode($paginationKeywords); ?>&page=<?php echo $i; ?>" class="<?php echo ($i === $currentPage) ? 'active' : ''; ?>"><?php echo $i; ?></a>
-                <?php endfor; ?>
-
-                <?php if ($currentPage < $totalPages): ?>
-                    <a href="?keywords=<?php echo urlencode($paginationKeywords); ?>&page=<?php echo ($currentPage + 1); ?>">Next</a>
-                <?php endif; ?>
-            </div>
-        <?php endif; ?>
-
-    <?php else: ?>
-        <p>No results found.</p>
-    <?php endif; ?>
-
-    <?php if ($_SERVER['REQUEST_METHOD'] === 'POST'): ?>
-        <p>No results found for the given keywords.</p>
-    <?php endif; ?>
+            <?php else: ?>
+                <p>No results found.</p>
+            <?php endif; ?>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -292,6 +299,7 @@ function updateKeywordCount() {
     keywordTags.innerHTML = keywords.map(kw => `<span class="keyword-tag">${kw}</span>`).join('');
     keywordCount.textContent = `${keywords.length} keyword(s) (maximum 5)`;
 }
+
 function validateKeywords() {
     const keywordsInput = document.getElementById('keywords');
     const keywords = keywordsInput.value.split(',').map(kw => kw.trim()).filter(kw => kw);
@@ -301,54 +309,58 @@ function validateKeywords() {
     }
     return true;
 }
-// Update this part in your JavaScript code
-document.addEventListener('DOMContentLoaded', function() {
-            const bookmarkButtons = document.querySelectorAll('.bookmark-btn');
-            bookmarkButtons.forEach(button => {
-                button.addEventListener('click', async function() {
-                    const surah = this.dataset.surah;
-                    const ayat = this.dataset.ayat;
-                    const text = this.dataset.text;
-                    const translation = this.dataset.translation;
-                    
-                    try {
-                        const formData = new FormData();
-                        formData.append('surah', surah);
-                        formData.append('ayat', ayat);
-                        formData.append('text', text);
-                        formData.append('translation', translation);
-                        
-                        const response = await fetch('./bookmark/bookmarks.php', {
-                            method: 'POST',
-                            body: formData
-                        });
-                        
-                        console.log('Response status:', response.status);
-                        console.log('Response headers:', response.headers);
-                        
-                        const responseText = await response.text(); // First, get raw text
-                        console.log('Raw response:', responseText);
-                        
-                        try {
-                            const data = JSON.parse(responseText); // Then try to parse
-                            if (data.success) {
-                                alert('Bookmark saved successfully!');
-                            } else {
-                                alert(data.message || 'Failed to save bookmark');
-                            }
-                        } catch (parseError) {
-                            console.error('JSON Parse Error:', parseError);
-                            console.error('Unparseable response:', responseText);
-                            alert('Server returned an invalid response');
-                        }
-                    } catch (error) {
-                        console.error('Fetch Error:', error);
-                        alert('An error occurred while saving the bookmark');
-                    }
-                });
-            });
-        });
 
+document.addEventListener('DOMContentLoaded', function() {
+    const bookmarkButtons = document.querySelectorAll('.bookmark-btn');
+    bookmarkButtons.forEach(button => {
+        button.addEventListener('click', async function() {
+            const surah = this.dataset.surah;
+            const ayat = this.dataset.ayat;
+            const reference = this.dataset.reference;
+            const arabicText = this.dataset.arabicText;
+            const text = this.dataset.text;
+            const translation = this.dataset.translation;
+            
+            try {
+                const formData = new FormData();
+                if (surah && ayat) {
+                    formData.append('surah', surah);
+                    formData.append('ayat', ayat);
+                    formData.append('text', text);
+                } else if (reference) {
+                    formData.append('reference', reference);
+                    formData.append('arabic_text', arabicText);
+                    formData.append('text', text);
+                }
+                formData.append('translation', translation);
+                
+                const response = await fetch('./bookmark/bookmarks.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const responseText = await response.text();
+                console.log('Raw response:', responseText);
+                
+                try {
+                    const data = JSON.parse(responseText);
+                    if (data.success) {
+                        alert('Bookmark saved successfully!');
+                    } else {
+                        alert(data.message || 'Failed to save bookmark');
+                    }
+                } catch (parseError) {
+                    console.error('JSON Parse Error:', parseError);
+                    console.error('Unparseable response:', responseText);
+                    alert('Server returned an invalid response');
+                }
+            } catch (error) {
+                console.error('Fetch Error:', error);
+                alert('An error occurred while saving the bookmark');
+            }
+        });
+    });
+});
 </script>
 
 </body>
