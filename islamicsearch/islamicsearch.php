@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $offset = ($currentPage - 1) * $resultsPerPage;
 $totalResults = 0;
-$searchType = isset($_POST['search_type']) ? $_POST['search_type'] : (isset($_SESSION['search_type']) ? $_SESSION['search_type'] : 'quran');
+$searchType = isset($_POST['search_type']) ? $_POST['search_type'] : (isset($_GET['search_type']) ? $_GET['search_type'] : 'quran');
 
 // Store the selected type in the session
 $_SESSION['search_type'] = $searchType;
@@ -45,12 +45,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_FILES['keywords_file']) && $_FILES['keywords_file']['error'] === UPLOAD_ERR_OK) {
         $fileTmpPath = $_FILES['keywords_file']['tmp_name'];
         $fileContent = file_get_contents($fileTmpPath);
-        $fileKeywords = extractKeywordsFromFile($fileContent);
+        $fileKeywords = extractKeywordsFromFile($fileContent); // Extract top 5 keywords
         $keywordsArray = array_map('trim', explode(',', $fileKeywords));
         $keywordsArray = array_filter($keywordsArray);
-        $_SESSION['file_keywords_array'] = $keywordsArray;
+        $_SESSION['file_keywords_array'] = $keywordsArray; // Store in session
         unset($_SESSION['keywords_array']); // Clear regular keywords
     }
+} elseif (isset($_GET['keywords'])) {
+    // Use keywords from the URL (for pagination)
+    $keywordsArray = array_map('trim', explode(',', $_GET['keywords']));
+    $keywordsArray = array_filter($keywordsArray);
 } elseif (isset($_SESSION['file_keywords_array'])) {
     $keywordsArray = $_SESSION['file_keywords_array'];
 } elseif (isset($_SESSION['keywords_array'])) {
@@ -67,8 +71,8 @@ if (count($keywordsArray) > 5) {
         $types = '';
 
         foreach ($keywordsArray as $keyword) {
-            $conditions[] = "english_translation LIKE ?";
-            $params[] = "%$keyword%";
+            $conditions[] = "english_translation REGEXP ?"; // Use REGEXP for exact word matching
+            $params[] = "[[:<:]]" . $keyword . "[[:>:]]"; // Word boundaries for exact match
             $types .= 's';
         }
 
@@ -96,7 +100,7 @@ if (count($keywordsArray) > 5) {
             while ($row = $result->fetch_assoc()) {
                 $highlightedTranslation = $row['english_translation'];
                 foreach ($keywordsArray as $keyword) {
-                    $highlightedTranslation = preg_replace('/(' . preg_quote($keyword, '/') . ')/i', '<span class="highlight">$1</span>', $highlightedTranslation);
+                    $highlightedTranslation = preg_replace('/\b(' . preg_quote($keyword, '/') . ')\b/i', '<span class="highlight">$1</span>', $highlightedTranslation);
                 }
                 $row['highlighted_translation'] = $highlightedTranslation;
                 $results[] = $row;
@@ -156,6 +160,20 @@ function extractKeywordsFromFile($content) {
     .bookmark-btn {
         margin-top: 15px;
     }
+
+    .keyword-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-top: 10px;
+    }
+
+    .keyword-tag {
+        background-color: #e0e0e0;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 0.9em;
+    }
 </style>
 <body>
 <!-- Navbar -->
@@ -203,16 +221,14 @@ function toggleSidebar() {
         
         <form action="" method="POST" enctype="multipart/form-data" onsubmit="return validateKeywords()">
             <div class="search-container">
-                <input type="text" id="keywords" name="keywords" class="search-input" placeholder="Example: peace, mercy, blessing" value="<?php echo isset($_SESSION['keywords_array']) ? htmlspecialchars(implode(",",$_SESSION['keywords_array'])) : ''; ?>" oninput="updateKeywordCount()">
+                <input type="text" id="keywords" name="keywords" class="search-input" placeholder="Example: peace, mercy, blessing" value="<?php echo isset($_SESSION['file_keywords_array']) ? htmlspecialchars(implode(",", $_SESSION['file_keywords_array'])) : ''; ?>" oninput="updateKeywordCount()">
                 <input type="file" name="keywords_file" accept=".txt">
                 <div class="keyword-tags" id="keywordTags"></div>
                 <div class="keyword-count" id="keywordCount">0 keywords (maximum 5)</div>
                 <?php if (isset($error)): ?>
                     <div class="error-message"><?php echo $error; ?></div>
                 <?php endif; ?>
-                <!-- Hidden input to reset pagination to page 1 -->
                 <input type="hidden" name="page" value="1">
-                <!-- Radio Buttons for Search Type -->
                 <label>
                     <input type="radio" name="search_type" value="quran" <?php echo $searchType === 'quran' ? 'checked' : ''; ?>>
                     Quran
@@ -248,7 +264,6 @@ function toggleSidebar() {
                             <strong>Hadith Reference: <?php echo $result['reference'] ?? 'N/A'; ?></strong><br>
                             <p><strong>Arabic Text:</strong> <?php echo highlight_keywords($result['arabic_text'] ?? 'N/A', $keywordsArray); ?></p>
                             <p><strong>English Translation:</strong> <?php echo highlight_keywords($result['english_translation'] ?? 'N/A', $keywordsArray); ?></p>
-                            <!-- Only one bookmark button here -->
                             <button class="bookmark-btn" 
                                     data-reference="<?php echo $result['reference'] ?? ''; ?>" 
                                     data-arabic-text="<?php echo htmlspecialchars($result['arabic_text'] ?? '', ENT_QUOTES); ?>" 
@@ -270,15 +285,15 @@ function toggleSidebar() {
                         $end = min($totalPages, $currentPage + 2);
 
                         if ($currentPage > 1): ?>
-                            <a href="?keywords=<?php echo urlencode($paginationKeywords); ?>&page=<?php echo ($currentPage - 1); ?>">Previous</a>
+                            <a href="?keywords=<?php echo urlencode($paginationKeywords); ?>&page=<?php echo ($currentPage - 1); ?>&search_type=<?php echo $searchType; ?>">Previous</a>
                         <?php endif; ?>
 
                         <?php for ($i = $start; $i <= $end; $i++): ?>
-                            <a href="?keywords=<?php echo urlencode($paginationKeywords); ?>&page=<?php echo $i; ?>" class="<?php echo ($i === $currentPage) ? 'active' : ''; ?>"><?php echo $i; ?></a>
+                            <a href="?keywords=<?php echo urlencode($paginationKeywords); ?>&page=<?php echo $i; ?>&search_type=<?php echo $searchType; ?>" class="<?php echo ($i === $currentPage) ? 'active' : ''; ?>"><?php echo $i; ?></a>
                         <?php endfor; ?>
 
                         <?php if ($currentPage < $totalPages): ?>
-                            <a href="?keywords=<?php echo urlencode($paginationKeywords); ?>&page=<?php echo ($currentPage + 1); ?>">Next</a>
+                            <a href="?keywords=<?php echo urlencode($paginationKeywords); ?>&page=<?php echo ($currentPage + 1); ?>&search_type=<?php echo $searchType; ?>">Next</a>
                         <?php endif; ?>
                     </div>
                 <?php endif; ?>
@@ -310,7 +325,8 @@ function validateKeywords() {
     return true;
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+// Function to attach event listeners to bookmark buttons
+function attachBookmarkListeners() {
     const bookmarkButtons = document.querySelectorAll('.bookmark-btn');
     bookmarkButtons.forEach(button => {
         button.addEventListener('click', async function() {
@@ -360,6 +376,27 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    // Update keyword tags with extracted keywords from the file
+    const keywordsInput = document.getElementById('keywords');
+    const keywordTags = document.getElementById('keywordTags');
+    const keywordCount = document.getElementById('keywordCount');
+
+    // Check if there are keywords from the file in the session
+    const fileKeywords = "<?php echo isset($_SESSION['file_keywords_array']) ? implode(',', $_SESSION['file_keywords_array']) : ''; ?>";
+    if (fileKeywords) {
+        const keywords = fileKeywords.split(',').map(kw => kw.trim()).filter(kw => kw);
+        keywordTags.innerHTML = keywords.map(kw => `<span class="keyword-tag">${kw}</span>`).join('');
+        keywordCount.textContent = `${keywords.length} keyword(s) (maximum 5)`;
+    }
+
+    // Clear the session data after displaying the keywords
+    <?php if (isset($_SESSION['file_keywords_array'])) { unset($_SESSION['file_keywords_array']); } ?>
+
+    // Attach event listeners to bookmark buttons
+    attachBookmarkListeners();
 });
 </script>
 
