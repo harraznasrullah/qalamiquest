@@ -2,6 +2,23 @@
 session_start();
 include('db_connection.php');
 
+// Handle AJAX request to update session data
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax'])) {
+    // Get the references from the AJAX request
+    $references = json_decode($_POST['references'], true);
+
+    // Update session data
+    if (isset($references)) {
+        $_SESSION['proposal']['references'] = array_filter($references, function ($ref) {
+            return !empty(trim($ref)); // Filter out empty or whitespace-only references
+        });
+    }
+
+    // Return success response
+    echo json_encode(['success' => true]);
+    exit();
+}
+
 // Check if the user is logged in
 if (!isset($_SESSION['user_name'])) {
     header("Location: login.php");
@@ -17,12 +34,17 @@ if (!isset($_SESSION['proposal'])) {
 // Handle form submission for saving references in the session or database
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $errors = [];
+
+    // Initialize $_POST['references'] if it's not set
+    $_POST['references'] = $_POST['references'] ?? [];
+
+    // Filter out empty or whitespace-only references
     $references = array_filter($_POST['references'], function ($ref) {
         return !empty(trim($ref));
     });
 
     // Validate that references are added
-    if (count($references) < 1) {
+    if (isset($_POST['submit']) && count($references) < 1) {
         $errors['references'] = "Please provide at least one reference.";
     }
 
@@ -110,7 +132,7 @@ if (!isset($_SESSION['proposal']['references']) && isset($_SESSION['proposal']['
     }
 }
 
-// Set the saved references from session or default to empty
+// Set the saved references from session or default to at least one empty string
 $savedReferences = $_SESSION['proposal']['references'] ?? [''];
 $_SESSION['proposal']['step8_completed'] = true;
 ?>
@@ -124,8 +146,8 @@ $_SESSION['proposal']['step8_completed'] = true;
     <title>QalamiQuest - Research Proposal Step 8</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="proposal_style.css">
-
 </head>
+
 <style>
     .references-container {
         background-color: #f8f9fa;
@@ -232,27 +254,21 @@ $_SESSION['proposal']['step8_completed'] = true;
                 <?php foreach ($savedReferences as $index => $reference): ?>
                     <div class="reference-entry">
                         <div class="reference-header">
-                            <span class="reference-number"></span>
+                            <span class="reference-number"><?php echo $index + 1; ?></span>
                         </div>
-                        <textarea class="reference-input" name="references[]" placeholder="Enter your reference..."
-                            required><?php echo htmlspecialchars($reference); ?></textarea>
-                        <?php if ($index > 0): ?>
-                            <button type="button" class="remove-reference" onclick="removeReference(this)">
-                                <i class="fas fa-times"></i>
+                        <textarea class="reference-input" name="references[]"
+                            placeholder="Enter your reference..."><?php echo htmlspecialchars($reference); ?></textarea>
+                        <?php if ($index >= 0): ?>
+                            <button type="button" class="remove-reference-btn" onclick="removeReference(this)">
+                                <i class="fas fa-trash"></i>
                             </button>
-                        <?php endif; ?>
-                        <?php if (isset($errors['reference_' . $index])): ?>
-                            <div class="error-message">
-                                <i class="fas fa-exclamation-circle"></i>
-                                <?php echo $errors['reference_' . $index]; ?>
-                            </div>
                         <?php endif; ?>
                     </div>
                 <?php endforeach; ?>
             </div>
 
             <button type="button" class="add-reference-btn" onclick="addReference()">
-                <i class="fas fa-plus"></i> Add Another Reference
+                <i class="fas fa-plus"></i> Add Reference
             </button>
 
             <?php if (isset($errors['references'])): ?>
@@ -261,6 +277,7 @@ $_SESSION['proposal']['step8_completed'] = true;
                     <?php echo $errors['references']; ?>
                 </div>
             <?php endif; ?>
+
             <div class="button-group">
                 <button type="submit" name="previous_step" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Previous Step
@@ -283,28 +300,50 @@ $_SESSION['proposal']['step8_completed'] = true;
     </div>
 
     <script>
+        // Function to confirm submission
         function confirmSubmission() {
             return confirm("Are you sure you want to submit? Once submitted, you cannot edit or change the proposal.");
         }
 
+        // Function to add a new reference field
         function addReference() {
             const container = document.querySelector('.references-container');
             const newReference = `
-                <div class="reference-entry">
-                    <div class="reference-header">
-                        <span class="reference-number"></span>
-                    </div>
-                    <textarea class="reference-input" name="references[]" placeholder="Enter your reference..." required></textarea>
-                    <button type="button" class="remove-reference-btn" onclick="removeReference(this)">
-                        <i class="fas fa-trash"></i>
-                    </button>
+            <div class="reference-entry">
+                <div class="reference-header">
+                    <span class="reference-number">${container.children.length + 1}</span>
                 </div>
-            `;
+                <textarea class="reference-input" name="references[]" placeholder="Enter your reference..."></textarea>
+                <button type="button" class="remove-reference-btn" onclick="removeReference(this)">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
             container.insertAdjacentHTML('beforeend', newReference);
+            updateReferenceNumbers();
         }
 
+        // Function to remove a reference field
         function removeReference(button) {
-            button.closest('.reference-entry').remove();
+            // Remove the parent .reference-entry of the button
+            const referenceEntry = button.parentElement;
+            referenceEntry.remove();
+
+            // Update the numbering for all remaining reference fields
+            const references = document.querySelectorAll('.reference-entry');
+            references.forEach((entry, index) => {
+                const numberSpan = entry.querySelector('.reference-number');
+                numberSpan.textContent = index + 1; // Update the reference number
+            });
+        }
+
+
+        // Function to update reference numbers
+        function updateReferenceNumbers() {
+            const entries = document.querySelectorAll('.reference-entry');
+            entries.forEach((entry, index) => {
+                entry.querySelector('.reference-number').textContent = index + 1;
+            });
         }
     </script>
 </body>

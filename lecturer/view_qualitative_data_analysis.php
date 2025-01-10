@@ -299,7 +299,7 @@ try {
     // Log the error and show a user-friendly message
     error_log($e->getMessage());
     ob_end_clean();
-    echo "<p style='color: red; text-align: center; margin-top: 20px;'>An error occurred: " . htmlspecialchars($e->getMessage()) . "</p>";
+    echo "<p style='color: black; text-align: center; margin-top: 20px;'>" . htmlspecialchars($e->getMessage()) . "</p>";
 } finally {
     // Ensure database connection is closed
     if (isset($conn)) {

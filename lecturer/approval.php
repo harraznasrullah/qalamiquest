@@ -9,6 +9,7 @@ if (!isset($_SESSION['user_name'])) {
 }
 
 $lecturer_name = strtoupper($_SESSION['user_name']);
+$lecturer_id = $_SESSION['user_id']; // Assuming the lecturer's ID is stored in the session
 
 // Fetch proposals with filtering and pagination
 $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
@@ -18,8 +19,8 @@ $offset = ($page - 1) * $limit;
 $search = isset($_GET['search']) ? $_GET['search'] : '';
 $status_filter = isset($_GET['status']) ? $_GET['status'] : '1';
 
-// Update the WHERE clause to use numeric status values
-$where_clause = "WHERE proposals.status = ?";
+// Update the WHERE clause to filter by supervisor_id using the supervisors table
+$where_clause = "WHERE proposals.status = ? AND supervisors.supervisor_id = ? AND supervisors.status = 'approved'";
 if ($search) {
     $where_clause .= " AND (proposals.title LIKE ? OR users.fullname LIKE ?)";
 }
@@ -28,6 +29,7 @@ $sql = "SELECT proposals.proposal_id, proposals.title, users.fullname AS student
         proposals.last_saved, users.email
         FROM proposals 
         JOIN users ON proposals.user_id = users.id 
+        JOIN supervisors ON proposals.user_id = supervisors.student_id
         $where_clause 
         ORDER BY proposals.last_saved DESC
         LIMIT ? OFFSET ?";
@@ -36,21 +38,25 @@ $stmt = $conn->prepare($sql);
 
 if ($search) {
     $search_param = "%$search%";
-    $stmt->bind_param("sssii", $status_filter, $search_param, $search_param, $limit, $offset);
+    $stmt->bind_param("iissii", $status_filter, $lecturer_id, $search_param, $search_param, $limit, $offset);
 } else {
-    $stmt->bind_param("sii", $status_filter, $limit, $offset);
+    $stmt->bind_param("iiii", $status_filter, $lecturer_id, $limit, $offset);
 }
 
 $stmt->execute();
 $result = $stmt->get_result();
 
 // Get total count for pagination
-$count_sql = "SELECT COUNT(*) as count FROM proposals JOIN users ON proposals.user_id = users.id $where_clause";
+$count_sql = "SELECT COUNT(*) as count 
+              FROM proposals 
+              JOIN users ON proposals.user_id = users.id 
+              JOIN supervisors ON proposals.user_id = supervisors.student_id
+              $where_clause";
 $count_stmt = $conn->prepare($count_sql);
 if ($search) {
-    $count_stmt->bind_param("sss", $status_filter, $search_param, $search_param);
+    $count_stmt->bind_param("iiss", $status_filter, $lecturer_id, $search_param, $search_param);
 } else {
-    $count_stmt->bind_param("s", $status_filter);
+    $count_stmt->bind_param("ii", $status_filter, $lecturer_id);
 }
 $count_stmt->execute();
 $total_records = $count_stmt->get_result()->fetch_assoc()['count'];
@@ -85,8 +91,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
-
-// Update the status filter dropdown in HTML
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -166,7 +170,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                             <div class="action-buttons">
                                 <button class="btn btn-view" onclick="viewProposal(<?php echo $row['proposal_id']; ?>)">
-                                    <i class="fas fa-eye"></i> View
+                                    <i class="fas fa-eye"></i> Comment
                                 </button>
                                 <button class="btn btn-approve"
                                     onclick="showFeedbackModal(<?php echo $row['proposal_id']; ?>, 'approve')">

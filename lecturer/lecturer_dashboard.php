@@ -3,6 +3,7 @@ session_start();
 include('../db_connection.php');
 
 $lecturer_name = strtoupper($_SESSION['user_name']);
+$lecturer_id = $_SESSION['user_id']; // Assuming the lecturer's ID is stored in the session
 
 // Handle proposal archiving/deactivation
 if (isset($_GET['action']) && $_GET['action'] == 'archive' && isset($_GET['proposal_id'])) {
@@ -32,11 +33,16 @@ $offset = ($page - 1) * $results_per_page;
 $total_query = "SELECT COUNT(*) as total 
                 FROM proposals p
                 JOIN users u ON p.user_id = u.id 
+                JOIN supervisors s ON p.user_id = s.student_id
                 WHERE p.approval_date IS NOT NULL 
                 AND u.title = 'student'
                 AND p.is_deleted = 0
-                AND (p.lecturer_visibility IS NULL OR p.lecturer_visibility = 1)";
-$total_result = $conn->query($total_query);
+                AND (p.lecturer_visibility IS NULL OR p.lecturer_visibility = 1)
+                AND s.supervisor_id = ?";
+$total_stmt = $conn->prepare($total_query);
+$total_stmt->bind_param("i", $lecturer_id);
+$total_stmt->execute();
+$total_result = $total_stmt->get_result();
 $total_row = $total_result->fetch_assoc();
 $total_proposals = $total_row['total'];
 $total_pages = ceil($total_proposals / $results_per_page);
@@ -45,28 +51,44 @@ $total_pages = ceil($total_proposals / $results_per_page);
 $query = "SELECT p.proposal_id, p.title, p.approval_date, p.status, p.is_deleted, u.fullname AS student_name
           FROM proposals p
           JOIN users u ON p.user_id = u.id 
+          JOIN supervisors s ON p.user_id = s.student_id
           WHERE p.approval_date IS NOT NULL 
           AND u.title = 'student'
           AND p.is_deleted = 0
           AND (p.lecturer_visibility IS NULL OR p.lecturer_visibility = 1)
+          AND s.supervisor_id = ?
           ORDER BY p.approval_date DESC
           LIMIT ? OFFSET ?";
 
 $stmt = $conn->prepare($query);
-$stmt->bind_param("ii", $results_per_page, $offset);
+$stmt->bind_param("iii", $lecturer_id, $results_per_page, $offset);
 $stmt->execute();
 $result = $stmt->get_result();
 
-// Pending requests and status queries remain the same
-$request_query = "SELECT COUNT(*) as request_count FROM supervisors WHERE status = 'pending'";
-$result_requests = $conn->query($request_query);
-$row_requests = $result_requests->fetch_assoc();
-$pending_requests = $row_requests['request_count'];
-
-$status_query = "SELECT COUNT(*) as status_count FROM proposals WHERE status = 1";
-$result_status = $conn->query($status_query);
-$row_status = $result_status->fetch_assoc();
+// Pending approvals count (filtered by supervisor_id)
+$status_query = "SELECT COUNT(*) as status_count 
+                 FROM proposals p
+                 JOIN supervisors s ON p.user_id = s.student_id
+                 WHERE p.status = 1
+                 AND s.supervisor_id = ?";
+$status_stmt = $conn->prepare($status_query);
+$status_stmt->bind_param("i", $lecturer_id);
+$status_stmt->execute();
+$status_result = $status_stmt->get_result();
+$row_status = $status_result->fetch_assoc();
 $pending_status = $row_status['status_count'];
+
+// Pending student requests count (filtered by supervisor_id)
+$request_query = "SELECT COUNT(*) as request_count 
+                  FROM supervisors 
+                  WHERE status = 'pending' 
+                  AND supervisor_id = ?";
+$request_stmt = $conn->prepare($request_query);
+$request_stmt->bind_param("i", $lecturer_id);
+$request_stmt->execute();
+$request_result = $request_stmt->get_result();
+$row_requests = $request_result->fetch_assoc();
+$pending_requests = $row_requests['request_count'];
 ?>
 
 <!DOCTYPE html>
@@ -334,8 +356,6 @@ $pending_status = $row_status['status_count'];
         margin-top: 20px;
     }
 </style>
-</style>
-
 <body>
     <!-- Navbar -->
     <div class="navbar">

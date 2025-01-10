@@ -122,65 +122,71 @@ for ($i = count($savedObjectives); $i < 3; $i++) {
         </div>
 
         <form action="step2.php" method="POST" id="objectivesForm">
-    <div class="objectives-container">
-        <?php foreach ($savedObjectives as $index => $objective): ?>
-            <div class="objective-entry">
-                <div class="objective-header">
-                    <span class="objective-number"><?php echo $index + 1; ?></span>
-                    <label>Research Objective</label>
-                </div>
-                <input type="text" class="objective-input" name="objectives[]"
-                    value="<?php echo htmlspecialchars($objective); ?>"
-                    placeholder="Enter your research objective..." >
-                <?php if ($index >= 3): ?>
-                    <button type="button" class="remove-objective" onclick="removeObjective(this)">
-                        <i class="fas fa-times"></i>
-                    </button>
-                <?php endif; ?>
+            <div class="objectives-container">
+                <?php foreach ($savedObjectives as $index => $objective): ?>
+                    <div class="objective-entry">
+                        <div class="objective-header">
+                            <span class="objective-number"><?php echo $index + 1; ?></span>
+                            <label>Research Objective</label>
+                        </div>
+                        <input type="text" class="objective-input" name="objectives[]"
+                            value="<?php echo htmlspecialchars($objective); ?>"
+                            placeholder="Enter your research objective...">
+                        <?php if ($index >= 3): ?>
+                            <button type="button" class="remove-objective" onclick="removeObjective(this)">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
             </div>
-        <?php endforeach; ?>
-    </div>
 
-    <button type="button" class="add-objective-btn" onclick="addObjective()">
-        <i class="fas fa-plus"></i> Add Another Objective
-    </button>
+            <button type="button" class="add-objective-btn" onclick="addObjective()">
+                <i class="fas fa-plus"></i> Add Another Objective
+            </button>
 
-    <?php if (isset($errors['objectives'])): ?>
-        <div class="error-message">
-            <i class="fas fa-exclamation-circle"></i>
-            <?php echo $errors['objectives']; ?>
-        </div>
-    <?php endif; ?>
+            <?php if (isset($errors['objectives'])): ?>
+                <div class="error-message">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <?php echo $errors['objectives']; ?>
+                </div>
+            <?php endif; ?>
 
-    <div class="button-group">
-        <button type="submit" class="btn btn-secondary" name="previous_step">
-            <i class="fas fa-arrow-left"></i> Previous Step
-        </button>
-        <button type="submit" class="btn btn-primary" name="next_step">
-            Next Step <i class="fas fa-arrow-right"></i>
-        </button>
-        <button type="submit" class="btn btn-secondary" name="save_and_quit">
-            Save and Quit <i class="fas fa-save"></i>
-        </button>
-    </div>
-</form>
+            <div class="button-group">
+                <button type="submit" class="btn btn-secondary" name="previous_step">
+                    <i class="fas fa-arrow-left"></i> Previous Step
+                </button>
+                <button type="submit" class="btn btn-primary" name="next_step">
+                    Next Step <i class="fas fa-arrow-right"></i>
+                </button>
+                <button type="submit" class="btn btn-secondary" name="save_and_quit">
+                    Save and Quit <i class="fas fa-save"></i>
+                </button>
+            </div>
+        </form>
     </div>
 
     <script>
-        document.getElementById('objectivesForm').addEventListener('submit', function (e) {
-        const buttonClicked = document.activeElement.name; // Get the button that was clicked
-        if (buttonClicked === 'save_and_quit' || buttonClicked === 'previous_step') {
-            // Remove 'required' attribute from inputs
-            const inputs = document.querySelectorAll('.objective-input');
-            inputs.forEach(input => input.removeAttribute('required'));
-        }
-    });
-            `;
-
-            container.appendChild(objectiveEntry);
+        // Function to add a new objective input field
+        function addObjective() {
+            const container = document.querySelector('.objectives-container');
+            const newObjective = `
+            <div class="objective-entry">
+                <div class="objective-header">
+                    <span class="objective-number">${container.children.length + 1}</span>
+                    <label>Research Objective</label>
+                </div>
+                <input type="text" class="objective-input" name="objectives[]" placeholder="Enter your research objective...">
+                <button type="button" class="remove-objective" onclick="removeObjective(this)">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+            container.insertAdjacentHTML('beforeend', newObjective);
             updateObjectiveNumbers();
         }
 
+        // Function to remove an objective input field
         function removeObjective(button) {
             const container = document.querySelector('.objectives-container');
             if (container.children.length > 3) {
@@ -189,12 +195,23 @@ for ($i = count($savedObjectives); $i < 3; $i++) {
             }
         }
 
+        // Function to update objective numbers
         function updateObjectiveNumbers() {
             const objectives = document.querySelectorAll('.objective-entry');
             objectives.forEach((obj, index) => {
                 obj.querySelector('.objective-number').textContent = index + 1;
             });
         }
+
+        // Handle form submission for "Save and Quit" or "Previous Step"
+        document.getElementById('objectivesForm').addEventListener('submit', function (e) {
+            const buttonClicked = document.activeElement.name; // Get the button that was clicked
+            if (buttonClicked === 'save_and_quit' || buttonClicked === 'previous_step') {
+                // Remove 'required' attribute from inputs
+                const inputs = document.querySelectorAll('.objective-input');
+                inputs.forEach(input => input.removeAttribute('required'));
+            }
+        });
     </script>
 </body>
 

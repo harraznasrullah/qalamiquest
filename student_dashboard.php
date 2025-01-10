@@ -367,7 +367,7 @@ $stmt->close();
                                     ?>
                                     <span class="<?php echo $statusClass; ?>"><?php echo $statusText; ?></span>
                                 </td>
-                                <td style="display: flex; justify-content: space-between; align-items: center;">
+                                <td>
                                     <?php if ($proposal['status'] >= 0): ?>
                                         <!-- View Button -->
                                         <button class="btn-view"
@@ -377,14 +377,14 @@ $stmt->close();
 
                                         <!-- Delete Confirmation Form (Trash bin icon) -->
                                         <form action="delete_proposal.php?proposal_id=<?php echo $proposal['proposal_id']; ?>"
-                                            method="POST" onsubmit="return confirmDelete()" style="margin: 0;">
+                                            method="POST" onsubmit="return confirmDelete()"
+                                            style="float: right; margin-left: 10px;">
                                             <button type="submit" name="confirm_delete" class="delete-btn" title="Delete Proposal">
                                                 <i class="fas fa-trash-alt"></i> <!-- Trash bin icon -->
                                             </button>
                                         </form>
                                     <?php endif; ?>
                                 </td>
-
                             </tr>
                         <?php endforeach; ?>
                     <?php endif; ?>
